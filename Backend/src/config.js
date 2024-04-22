@@ -8,7 +8,12 @@ const configuration = {
     username: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
     host: process.env.DB_HOST || "localhost",
-    port: process.env.DB_PORT || 3306
+    port: process.env.DB_PORT || 3306,
+    email_address: process.env.EMAIL_ADDRESS,
+    email_password: process.env.EMAIL_PASSWORD,
+    oauth_client_id: process.env.OAUTH_CLIENT_ID,
+    oauth_client_secret: process.env.OAUTH_CLIENT_SECRET,
+    oauth_refresh_token: process.env.OAUTH_REFRESH_TOKEN
 };
 
 export default configuration;

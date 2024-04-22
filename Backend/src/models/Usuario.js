@@ -1,4 +1,5 @@
 import { DataTypes } from "sequelize";
+import encrypt from "../util/encryptPassword.js";
 import sequelize from "../database/db.js";
 
 const Usuario = sequelize.define(
@@ -12,7 +13,10 @@ const Usuario = sequelize.define(
     codigo: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: {
+        name: "users_code",
+        msg: "El codigo proporcionado ya existe",
+      },
     },
     nombre: {
       type: DataTypes.STRING,
@@ -48,6 +52,10 @@ const Usuario = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    tipo: {
+      type: DataTypes.ENUM('Director', 'Docente'),
+      allowNull: false
+  },
     estado: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
@@ -57,6 +65,35 @@ const Usuario = sequelize.define(
       references: {
         model: "Roles",
         key: "id",
+      },
+    },
+  },
+  {
+    hooks: {
+      beforeCreate: async (user, options) => {
+        try {
+          const hashedPassword = await encrypt(user.password);
+          user.password = hashedPassword;
+        } catch (err) {
+          const errorPassword = new Error(
+            `Error al intentar encriptar la contraseña del usuario con ID ${user.id}`
+          );
+          errorPassword.stack = err.stack;
+          throw errorPassword;
+        }
+      },
+      beforeDestroy: async (user, options) => {
+        try {
+          await Promise.all(
+            PasswordReset.destroy({ where: { usuario_id: user.id } })
+          );
+        } catch (err) {
+          const errorDelete = new Error(
+            `Error al intentar eliminar datos relacionados al usuario con ID ${user.id}`
+          );
+          errorDelete.stack = err.stack;
+          throw errorDelete;
+        }
       },
     },
   },
