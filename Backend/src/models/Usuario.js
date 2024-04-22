@@ -9,12 +9,12 @@ const Usuario = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    codigo_docente: {
+    codigo: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
-    nombre_docente: {
+    nombre: {
       type: DataTypes.STRING,
       allowNull: false,
     },
