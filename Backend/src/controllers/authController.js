@@ -96,7 +96,7 @@ export const refresh = (req, res) => {
             const accessToken = jwt.sign(
                 {
                     id: foundUser.id,
-                    username: foundUser.email_institucional,
+                    username: foundUser.correo_institucional,
                     tipo: foundUser.tipo
                 },
                 process.env.ACCESS_TOKEN_SECRET,
@@ -137,12 +137,12 @@ export const requestPasswordRst = async (req, res, next) => {
     try{
 
         // Obtenemos el email y la URL de redireccion
-        const {email_institucional, redirectURL} = req.body;
+        const {correo_institucional, redirectURL} = req.body;
 
         // Verificamos que el email proporcionado existe
         const user = await User.findOne({
             where: {
-                email_institucional
+                correo_institucional
             }
         });
 

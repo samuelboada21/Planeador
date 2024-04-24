@@ -162,7 +162,7 @@ const loginSchema = z
 // Esquema para solicitud de cambio de contraseña
 const reqPassResetSchema = z
   .object({
-    email: z
+    correo_institucional: z
       .string({
         invalid_type_error: "El email solo puede ser texto",
       })

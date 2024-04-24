@@ -25,7 +25,6 @@ const accountTransport = {
  * Función encargada de establecer la conexión con oauth para el envio de correos
  */
 const mail_rover = () => {
-
     return new Promise((resolve, reject) => {
         const oauth2Client = new OAuth2(
             accountTransport.auth.clientId,

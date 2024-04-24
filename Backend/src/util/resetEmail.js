@@ -14,7 +14,7 @@ const sendResetEmail = (user, redirectURL) => {
 
     return new Promise((resolve, reject) => {
 
-        const {id, email, nombre, apellido} = user;
+        const {id, correo_institucional, nombre} = user;
 
         // Generamos la cadena de reseteo
         const resetString = crypto.randomBytes(64).toString('hex') + id;
@@ -23,7 +23,7 @@ const sendResetEmail = (user, redirectURL) => {
         updateRecordReset(id, resetString);
 
         // Creamos la estructura del email y generamos el HTML
-        const emailBody = createEmailEstructure(id, nombre, apellido, redirectURL, resetString);
+        const emailBody = createEmailEstructure(id, correo_institucional, nombre, redirectURL, resetString);
 
         // Definimos el objeto que envia el correo
         mail_rover()
@@ -31,7 +31,7 @@ const sendResetEmail = (user, redirectURL) => {
                 // Configuramos el origen y destinatario
                 const message = {
                     from: configuration.email_address,
-                    to: email,
+                    to: correo_institucional,
                     subject: "Restablecimiento de contraseña",
                     html: emailBody
                 }
@@ -40,7 +40,7 @@ const sendResetEmail = (user, redirectURL) => {
 
                     if (error) reject(error);
                     else {
-                        logger.info(`Email de restablecimiento enviado al correo ${email}`);
+                        logger.info(`Email de restablecimiento enviado al correo ${correo_institucional}`);
                         resolve();
                     }
                 });
