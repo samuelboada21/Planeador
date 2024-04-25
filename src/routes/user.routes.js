@@ -10,6 +10,12 @@ import { validateUserData } from '../schemas/userSchema.js'
 import userController from '../controllers/userController.js';
 import limiter from '../middlewares/rateLimit.js';
 
+//Importamos para validar excels
+import fileupload from 'express-fileupload';
+import fileSizeLimiter from '../middlewares/fileSizeLimiter.js';
+import filePayloadExist from '../middlewares/filePayloadExist.js';
+import fileExcelLimiter from '../middlewares/fileExcelLimiter.js';
+
 // Inicializamos el router
 const router = Router();
 
@@ -40,7 +46,7 @@ router.post('/createTeacher', [extractToken, verifyJWT, isAdmin, validateUserDat
 // @desc Endpoint encargado de la creacion de un docente
 // @route GET /api/user/createTeacher
 // @access Docente
-router.post('/createTeachers', [extractToken, verifyJWT, isAdmin, validateUserData ], userController.createTeachers);
+router.post('/createTeachers', [extractToken, verifyJWT, isAdmin, fileupload(), filePayloadExist, fileExcelLimiter('.xlsx'), fileSizeLimiter], userController.createTeachers);//probado
 
 // @desc Endpoint encargado de la actualización de los datos de contacto de un docente por el mismo a partir de su id
 // @route PUT /api/user/teacher/update

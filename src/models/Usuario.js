@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import encrypt from "../util/encryptPassword.js";
 import sequelize from "../database/db.js";
-import PasswordReset from './PasswordReset.js';
+import PasswordReset from "./PasswordReset.js";
 
 const Usuario = sequelize.define(
   "Usuarios",
@@ -54,9 +54,9 @@ const Usuario = sequelize.define(
       allowNull: false,
     },
     tipo: {
-      type: DataTypes.ENUM('Director', 'Docente'),
-      allowNull: false
-  },
+      type: DataTypes.ENUM("Director", "Docente"),
+      allowNull: false,
+    },
     estado: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
@@ -86,7 +86,7 @@ const Usuario = sequelize.define(
       beforeDestroy: async (user, options) => {
         try {
           await Promise.all([
-            PasswordReset.destroy({ where: { usuario_id: user.id } })
+            PasswordReset.destroy({ where: { usuario_id: user.id } }),
           ]);
         } catch (err) {
           const errorDelete = new Error(
@@ -97,8 +97,6 @@ const Usuario = sequelize.define(
         }
       },
     },
-  },
-  {
     paranoid: true,
     deletedAt: "fecha_inactivacion",
     timestamps: true,

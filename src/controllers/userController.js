@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import password_generator from "generate-password";
 import encryptPasswd from "../util/encryptPassword.js";
 import generateCorreo from "../util/emailGenerator.js";
+import sequelize from "../database/db.js";
 import XLSX from "xlsx";
 import { tieneDuplicados } from "../util/duplicatedTeachers.js";
 
@@ -544,7 +545,7 @@ const createTeachers = async (req, res, next) => {
       res.status(400);
       throw new Error("No se permite el uso de encabezados duplicados");
     }
-    // Verificamos que no haya duplicados en el conjunto de estudiantes cargados
+    // Verificamos que no haya duplicados en el conjunto de docentes cargados
     if (tieneDuplicados(dataExcel)) {
       res.status(400);
       throw new Error(
@@ -570,7 +571,6 @@ const createTeachers = async (req, res, next) => {
     const result = await sequelize.transaction(async (t) => {
       // Arreglo que contiene los datos de los docentes nuevos
       const newTeachers = [];
-      const existTeachers = [];
 
       // Registramos los datos de los usuarios
       for (const itemFila of dataExcel) {
@@ -670,8 +670,9 @@ const createTeachers = async (req, res, next) => {
             teacher.correo_institucional === correo_institucional
         );
         // En caso de existir solo notificamos al usuario y creamos su inscripcion
-        if (existingTeacher && existingTeacher.fecha_inactivacion !== null) {
-          await existingTeacher.restore();
+        if (existingTeacher) {
+          if (existingTeacher.fecha_inactivacion !== null)
+            await existingTeacher.restore();
         } else {
           // Generamos la contraseña
           const newPassword = password_generator.generate({
@@ -697,30 +698,30 @@ const createTeachers = async (req, res, next) => {
             rol_id: 2,
           });
         }
-        // Registramos a los docentes nuevos
-        await Usuario.bulkCreate(newTeachers, {
-          returning: true,
-          transaction: t,
-        });
-
-        const teachers_correos = newTeachers
-          .concat(existTeachers)
-          .map((teacher) => {
-            return estudiante.correo_institucional;
-          });
-
-        // Enviamos correo de confirmación de registro
-        await generateCorreo(teachers_correos);
-
-        existTeachers.push(existingTeacher);
       }
+      // Registramos a los docentes nuevos
+      await Usuario.bulkCreate(newTeachers, {
+        returning: true,
+        transaction: t,
+      });
+
+      const teachers_correos = newTeachers.map((teacher) => {
+        return teacher.correo_institucional;
+      });
+
+      if (teachers_correos.length === 0) {
+        res.status(400);
+        throw new Error("No hay docentes nuevos para agregar");
+      }
+      // Enviamos correo de confirmación de registro
+      await generateCorreo(teachers_correos);
+
+      return newTeachers.length;
     });
 
-    res
-      .status(200)
-      .json({
-        message: `Se han inscrito ${result.length} docentes satisfactoriamente al sistema`,
-      });
+    res.status(200).json({
+      message: `Se han inscrito ${result} docentes satisfactoriamente al sistema`,
+    });
   } catch (error) {
     const errorCargaTeacher = new Error(
       `Ocurrio un problema al intentar cargar el listado de docentes - ${error.message}`
