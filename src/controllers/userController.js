@@ -3,7 +3,9 @@ import Usuario from "../models/Usuario.js";
 import bcrypt from "bcrypt";
 import password_generator from "generate-password";
 import encryptPasswd from "../util/encryptPassword.js";
-import generateCorreo from '../util/emailGenerator.js';
+import generateCorreo from "../util/emailGenerator.js";
+import XLSX from "xlsx";
+import { tieneDuplicados } from "../util/duplicatedTeachers.js";
 
 /* --------- getProfile function -------------- */
 const getProfile = async (req, res, next) => {
@@ -459,7 +461,7 @@ const createTeacher = async (req, res, next) => {
     area_formacion,
     correo_personal,
     correo_institucional,
-    celular
+    celular,
   } = req.body;
 
   try {
@@ -475,10 +477,11 @@ const createTeacher = async (req, res, next) => {
       req.log.warn(
         `El usuario con id ${req.user.id} esta tratando de asignar un codigo o email de docente actualmente en uso`
       );
-      return res
-        .status(400)
-        .json({ error: "El docente ya está registrado, el código y los correos deben ser únicos" });
-    }else{
+      return res.status(400).json({
+        error:
+          "El docente ya está registrado, el código y los correos deben ser únicos",
+      });
+    } else {
       //generamos la contraseña
       const password = password_generator.generate({
         length: 15,
@@ -504,20 +507,226 @@ const createTeacher = async (req, res, next) => {
     }
 
     // Enviamos correo de confirmación de registro
-    await generateCorreo(
-      [correo_institucional],
-    );
+    await generateCorreo([correo_institucional]);
 
     // Respondemos a la petición
-    return res
-      .status(200)
-      .json({ message: "Docente creado correctamente" });
+    return res.status(200).json({ message: "Docente creado correctamente" });
   } catch (error) {
     const errorUpdtTeaDir = new Error(
       `Ocurrio un problema al intentar crear el docente - ${error.message}`
     );
     errorUpdtTeaDir.stack = error.stack;
     next(errorUpdtTeaDir);
+  }
+};
+
+/* --------- createTeachers function -------------- */
+const createTeachers = async (req, res, next) => {
+  try {
+    //obtenemos el archivo excel
+    const excelFileBuffer = req.files.archivo.data;
+    // Procesamos el archivo excel y obtenemos los datos
+    const workbook = XLSX.read(excelFileBuffer, {
+      type: "buffer",
+    });
+    const workbookSheets = workbook.SheetNames;
+    const sheet = workbookSheets[0];
+    const dataExcel = XLSX.utils.sheet_to_json(workbook.Sheets[sheet]);
+
+    if (dataExcel.length === 0) {
+      res.status(400);
+      throw new Error("El archivo excel de docentes no puede estar vacio");
+    }
+    // Verificamos que no haya duplicados en los encabezados
+    let headers = Object.keys(dataExcel[0]);
+    let headersSet = new Set(headers);
+    if (headers.length !== headersSet.size) {
+      res.status(400);
+      throw new Error("No se permite el uso de encabezados duplicados");
+    }
+    // Verificamos que no haya duplicados en el conjunto de estudiantes cargados
+    if (tieneDuplicados(dataExcel)) {
+      res.status(400);
+      throw new Error(
+        "No se permiten docentes con codigos o correos repetidos"
+      );
+    }
+    // Obtenemos todos los docentes existentes
+    const existingTeachers = await Usuario.findAll({
+      where: {
+        tipo: "Docente",
+      },
+      attributes: [
+        "id",
+        "codigo",
+        "correo_personal",
+        "correo_institucional",
+        "fecha_inactivacion",
+      ],
+      paranoid: false,
+    });
+
+    //Inicializamos la transacción
+    const result = await sequelize.transaction(async (t) => {
+      // Arreglo que contiene los datos de los docentes nuevos
+      const newTeachers = [];
+      const existTeachers = [];
+
+      // Registramos los datos de los usuarios
+      for (const itemFila of dataExcel) {
+        // Validar las cabeceras del archivo
+        if (
+          !itemFila["codigo"] ||
+          !itemFila["nombre"] ||
+          !itemFila["tipo_vinculacion"] ||
+          !itemFila["departamento"] ||
+          !itemFila["area_formacion"] ||
+          !itemFila["correo_personal"] ||
+          !itemFila["correo_institucional"] ||
+          !itemFila["celular"]
+        ) {
+          res.status(400);
+          throw new Error("Formato de archivo no correspondiente");
+        }
+
+        // Validamos el formato del codigo
+        const codeRegex = /^\d{4,7}$/;
+        if (!codeRegex.test(itemFila["codigo"])) {
+          res.status(400);
+          throw new Error("No se permiten codigos de docentes no validos");
+        }
+        const codigo = itemFila["codigo"];
+
+        // Validamos el formato del nombre
+        const regexName =
+          /^(?! )[A-Za-zÀ-ÖØ-öø-ÿ]+(?: [A-Za-zÀ-ÖØ-öø-ÿ]+)*(?<! )$/;
+        // Verifica si el nombre cumple con el formato requerido
+        if (!regexName.test(itemFila["nombre"])) {
+          res.status(400);
+          throw new Error("El formato de nombre no es válido");
+        }
+        // Función para formatear el nombre
+        function formatName(name) {
+          // Divide el nombre en palabras
+          const words = name.split(/\s+/);
+          // Capitaliza la primera letra de cada palabra y une las palabras con un espacio
+          return words
+            .map(
+              (word) =>
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            )
+            .join(" ");
+        }
+        // Obtiene el nombre del usuario y lo formatea
+        const nombre = formatName(itemFila["nombre"]);
+
+        // Validamos el formato del nombre y apellido
+        const regextda =
+          /^(?! )[a-zA-ZÀ-ÖØ-öø-ÿ0-9]+( [a-zA-ZÀ-ÖØ-öø-ÿ0-9]+)*(?<! )$/;
+        if (
+          !regextda.test(itemFila["tipo_vinculacion"]) ||
+          !regextda.test(itemFila["departamento"]) ||
+          !regextda.test(itemFila["area_formacion"])
+        ) {
+          res.status(400);
+          throw new Error(
+            "El formato de tipo de vinculacion, departamento o area de formacion no son validos"
+          );
+        }
+        const tipo_vinculacion = itemFila["tipo_vinculacion"];
+        const departamento = itemFila["departamento"];
+        const area_formacion = itemFila["area_formacion"];
+
+        // Validamos el formato del correo personal
+        const regexMailpersonal = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regexMailpersonal.test(itemFila["correo_personal"])) {
+          res.status(400);
+          throw new Error("El formato de correo personal no es valido");
+        }
+        const correo_personal = itemFila["correo_personal"];
+
+        // Validamos el formato del correo institucional
+        const regexMailInstitucional = /^[a-zA-Z0-9._%+-]+@ufps.edu.co$/;
+        if (!regexMailInstitucional.test(itemFila["correo_institucional"])) {
+          res.status(400);
+          throw new Error(
+            "El formato de correo institucional no es valido, debe coincidir con el dominio de la UFPS"
+          );
+        }
+        const correo_institucional = itemFila["correo_institucional"];
+
+        // Validamos el formato del celular
+        const regexCelular = /^\d{10}$/;
+        if (!regexCelular.test(itemFila["celular"])) {
+          res.status(400);
+          throw new Error("El numero de celular debe contener 10 digitos");
+        }
+        const celular = itemFila["celular"];
+
+        // Verificamos si el docente ya existe tanto en los usuarios actuales como inactivos
+        const existingTeacher = existingTeachers.find(
+          (teacher) =>
+            teacher.codigo === codigo ||
+            teacher.correo_institucional === correo_institucional
+        );
+        // En caso de existir solo notificamos al usuario y creamos su inscripcion
+        if (existingTeacher && existingTeacher.fecha_inactivacion !== null) {
+          await existingTeacher.restore();
+        } else {
+          // Generamos la contraseña
+          const newPassword = password_generator.generate({
+            length: 15,
+            numbers: true,
+            symbols: true,
+          });
+
+          // Ciframos la contraseña
+          const hashedPassword = await encryptPasswd(newPassword);
+
+          newTeachers.push({
+            codigo,
+            nombre,
+            tipo_vinculacion,
+            departamento,
+            area_formacion,
+            correo_personal,
+            correo_institucional,
+            celular,
+            password: hashedPassword,
+            tipo: "Docente",
+            rol_id: 2,
+          });
+        }
+        // Registramos a los docentes nuevos
+        await Usuario.bulkCreate(newTeachers, {
+          returning: true,
+          transaction: t,
+        });
+
+        const teachers_correos = newTeachers
+          .concat(existTeachers)
+          .map((teacher) => {
+            return estudiante.correo_institucional;
+          });
+
+        // Enviamos correo de confirmación de registro
+        await generateCorreo(teachers_correos);
+
+        existTeachers.push(existingTeacher);
+      }
+    });
+
+    res
+      .status(200)
+      .json({
+        message: `Se han inscrito ${result.length} docentes satisfactoriamente al sistema`,
+      });
+  } catch (error) {
+    const errorCargaTeacher = new Error(
+      `Ocurrio un problema al intentar cargar el listado de docentes - ${error.message}`
+    );
+    errorCargaTeacher.stack = error.stack;
+    next(errorCargaTeacher);
   }
 };
 
@@ -529,6 +738,7 @@ const userController = {
   getDirectors,
   getDirectorById,
   createTeacher,
+  createTeachers,
   updateDirector,
   updatePassword,
   getProfile,

@@ -12,7 +12,7 @@ const createAdminUser = async () => {
         // Verificamos que el admin no exista
         const admin = await Usuario.findOne({
             where: {
-                correo_institucional: 'samuelomarboba@ufps.edu.co'
+                correo_institucional: 'monicamarcelarg@ufps.edu.co'
             }
         });
 
@@ -29,8 +29,8 @@ const createAdminUser = async () => {
                 tipo_vinculacion: 'DOCENTE PLANTA',
                 departamento: 'SISTEMAS E INFORMATICA',
                 area_formacion: 'Profesional Especifico',
-                correo_personal: 'omarsamuel212121@gmail.com',
-                correo_institucional: 'samuelomarboba@ufps.edu.co',
+                correo_personal: 'omarsamuel@gmail.com',
+                correo_institucional: 'monicamarcelarg@ufps.edu.co',
                 celular: '3023023232',
                 password: 'administrador1234',
                 tipo: 'Director',

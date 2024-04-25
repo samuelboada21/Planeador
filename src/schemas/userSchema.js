@@ -6,6 +6,9 @@ const valoresValidos = [
   "DOCENTE PLANTA",
   "DOCENTE CATEDRA",
   "DOCENTE OCASIONAL",
+  "Docente planta",
+  "Docente catedra",
+  "Docente ocasional",
 ];
 //esquema para usuario
 export const usuarioSchema = z

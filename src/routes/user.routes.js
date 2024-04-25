@@ -37,6 +37,11 @@ router.get('/teacher/:id', [ extractToken, verifyJWT, isAdmin, validateUserData 
 // @access Docente
 router.post('/createTeacher', [extractToken, verifyJWT, isAdmin, validateUserData ], userController.createTeacher); //probado
 
+// @desc Endpoint encargado de la creacion de un docente
+// @route GET /api/user/createTeacher
+// @access Docente
+router.post('/createTeachers', [extractToken, verifyJWT, isAdmin, validateUserData ], userController.createTeachers);
+
 // @desc Endpoint encargado de la actualización de los datos de contacto de un docente por el mismo a partir de su id
 // @route PUT /api/user/teacher/update
 // @access Docente
