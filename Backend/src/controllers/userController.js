@@ -1,6 +1,9 @@
 import { Op } from "sequelize";
 import Usuario from "../models/Usuario.js";
 import bcrypt from "bcrypt";
+import password_generator from "generate-password";
+import encryptPasswd from "../util/encryptPassword.js";
+import generateCorreo from '../util/emailGenerator.js';
 
 /* --------- getProfile function -------------- */
 const getProfile = async (req, res, next) => {
@@ -12,16 +15,15 @@ const getProfile = async (req, res, next) => {
       "password",
       "estado",
       "rol_id",
-      "fecha_creacion",
-      "fecha_actualizacion",
-      "fecha_inactivacion",
+      "createdAt",
+      "updatedAt",
+      "deletedAt",
     ];
 
     // Buscamos el usuario
     const existUser = await Usuario.findByPk(id, {
       attributes: { exclude: excluded_attributes },
     });
-
     return res.status(200).json(existUser);
   } catch (error) {
     const errorGetPerfil = new Error(
@@ -149,7 +151,7 @@ const updateTeacherData = async (req, res, next) => {
 };
 
 // ------------ Métodos para el Director (sobre el estudiante) ------------------
-/* --------- updateStudentDir function -------------- */
+/* --------- updateTeacherDir function -------------- */
 
 const updateTeacherDataDir = async (req, res, next) => {
   //Obtenemos el id del docente a actualizar
@@ -200,7 +202,7 @@ const updateTeacherDataDir = async (req, res, next) => {
         .json({ error: "El código y email del docente deben ser únicos" });
     }
 
-    // Actualizamos el estudiante
+    // Actualizamos el docente
     await teacher.update({
       codigo,
       nombre,
@@ -446,6 +448,79 @@ const deleteTeacher = async (req, res, next) => {
   }
 };
 
+/* --------- createTeacher function -------------- */
+const createTeacher = async (req, res, next) => {
+  // Obtenemos los datos de el docente a crear
+  const {
+    codigo,
+    nombre,
+    tipo_vinculacion,
+    departamento,
+    area_formacion,
+    correo_personal,
+    correo_institucional,
+    celular
+  } = req.body;
+
+  try {
+    // Comprobamos que no exista un docente con el mismo codigo o emails
+    const teacherExist = await Usuario.findOne({
+      where: {
+        [Op.or]: [{ codigo }, { correo_personal }, { correo_institucional }],
+      },
+    });
+
+    //comprobamos que no exista
+    if (teacherExist) {
+      req.log.warn(
+        `El usuario con id ${req.user.id} esta tratando de asignar un codigo o email de docente actualmente en uso`
+      );
+      return res
+        .status(400)
+        .json({ error: "El docente ya está registrado, el código y los correos deben ser únicos" });
+    }else{
+      //generamos la contraseña
+      const password = password_generator.generate({
+        length: 15,
+        numbers: true,
+        symbols: true,
+      });
+      // Ciframos la contraseña
+      const hashedPassword = await encryptPasswd(password);
+      // Creamos el usuario
+      await Usuario.create({
+        codigo,
+        nombre,
+        tipo_vinculacion,
+        departamento,
+        area_formacion,
+        correo_personal,
+        correo_institucional,
+        celular,
+        password: hashedPassword,
+        tipo: "Docente",
+        rol_id: 2,
+      });
+    }
+
+    // Enviamos correo de confirmación de registro
+    await generateCorreo(
+      [correo_institucional],
+    );
+
+    // Respondemos a la petición
+    return res
+      .status(200)
+      .json({ message: "Docente creado correctamente" });
+  } catch (error) {
+    const errorUpdtTeaDir = new Error(
+      `Ocurrio un problema al intentar crear el docente - ${error.message}`
+    );
+    errorUpdtTeaDir.stack = error.stack;
+    next(errorUpdtTeaDir);
+  }
+};
+
 const userController = {
   getTeachers,
   getTeacherById,
@@ -453,6 +528,7 @@ const userController = {
   updateTeacherDataDir,
   getDirectors,
   getDirectorById,
+  createTeacher,
   updateDirector,
   updatePassword,
   getProfile,

@@ -1,6 +1,7 @@
 import { DataTypes } from "sequelize";
 import encrypt from "../util/encryptPassword.js";
 import sequelize from "../database/db.js";
+import PasswordReset from './PasswordReset.js';
 
 const Usuario = sequelize.define(
   "Usuarios",
@@ -84,9 +85,9 @@ const Usuario = sequelize.define(
       },
       beforeDestroy: async (user, options) => {
         try {
-          await Promise.all(
+          await Promise.all([
             PasswordReset.destroy({ where: { usuario_id: user.id } })
-          );
+          ]);
         } catch (err) {
           const errorDelete = new Error(
             `Error al intentar eliminar datos relacionados al usuario con ID ${user.id}`

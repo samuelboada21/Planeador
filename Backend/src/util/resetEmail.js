@@ -23,7 +23,7 @@ const sendResetEmail = (user, redirectURL) => {
         updateRecordReset(id, resetString);
 
         // Creamos la estructura del email y generamos el HTML
-        const emailBody = createEmailEstructure(id, correo_institucional, nombre, redirectURL, resetString);
+        const emailBody = createEmailEstructure(id, nombre, redirectURL, resetString);
 
         // Definimos el objeto que envia el correo
         mail_rover()

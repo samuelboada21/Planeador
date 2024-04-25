@@ -4,7 +4,6 @@ import Usuario from '../models/Usuario.js';
 
 /** Middleware encargado de la verficicación del token de acceso de un usuario  */
 const verifyJWT = async (req, res, next) => {
-
     try{
         // Verificamos el token
         const { id } = jwt.verify(

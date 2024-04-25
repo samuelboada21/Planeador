@@ -18,31 +18,31 @@ const router = Router();
 // @desc Endpoint encargado de la administración del Login de usuario
 // @route POST /api/auth/login
 // @access public
-router.post('/login', [limiter, validateLoginData], login);
+router.post('/login', [limiter, validateLoginData], login); //probado
 
 
 // @desc Enpoint encargado de realizar el refresco del token de acceso
 // @route GET /api/auth/refresh
 // @access public - token de refresco expirado
-router.get('/refresh', refresh);
+router.get('/refresh', refresh);//debe probarse desde el frontend debido a la cookie
 
 
 // @desc Enpoint encargado de gestionar el cierre de sesión
 // @route POST /api/auth/logout
 // @access only Users 
-router.post('/logout', [extractToken, verifyJWT], logout);
+router.post('/logout', [extractToken, verifyJWT], logout); //debe probarse desde el frontend debido a la cookie
 
 
 // @desc Enpoint encargado de gestionar la petición de cambio de contraseña
 // @route POST /api/auth/requestPasswordReset
 // @access public 
-router.post('/requestPasswordReset', [limiter, validateReqPassReset], requestPasswordRst);
+router.post('/requestPasswordReset', [limiter, validateReqPassReset], requestPasswordRst); //probado
 
 
 // @desc Enpoint encargado de llevar a cabo el cambio de contraseña
 // @route POST /api/auth/resetPassword
 // @access public 
-router.post('/resetPassword', resetPassword);
+router.post('/resetPassword', resetPassword); //probado
 
 // Exportamos el router
 export default router;

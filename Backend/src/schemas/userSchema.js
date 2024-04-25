@@ -189,7 +189,7 @@ export function validateLoginData(req, res, next) {
 }
 
 export function validateUserData(req, res, next) {
-  const errors = validateData(studentSchema, req);
+  const errors = validateData(usuarioSchema, req);
   if (errors.length !== 0) return res.status(400).json({ error: errors });
   next();
 }
