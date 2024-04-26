@@ -83,11 +83,6 @@ const Usuario = sequelize.define(
           throw errorPassword;
         }
       },
-      beforeUpdate: async (user, options) => {
-        if (user.changed("estado") && user.estado === false) {
-          user.fecha_inactivacion = new Date();
-        }
-      },
       beforeDestroy: async (user, options) => {
         try {
           await Promise.all([
@@ -102,6 +97,7 @@ const Usuario = sequelize.define(
         }
       },
     },
+    sequelize,
     paranoid: true,
     deletedAt: "fecha_inactivacion",
     timestamps: true,

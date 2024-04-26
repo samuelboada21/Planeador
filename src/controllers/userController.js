@@ -7,6 +7,7 @@ import generateCorreo from "../util/emailGenerator.js";
 import sequelize from "../database/db.js";
 import XLSX from "xlsx";
 import { tieneDuplicados } from "../util/duplicatedTeachers.js";
+import logger from "../middlewares/logger.js";
 
 /* --------- getProfile function -------------- */
 const getProfile = async (req, res, next) => {
@@ -203,6 +204,11 @@ const updateTeacherDataDir = async (req, res, next) => {
       return res
         .status(400)
         .json({ error: "El código y email del docente deben ser únicos" });
+    }
+
+    // Si el estado cambió a false, establecemos la fecha de inactivación
+    if (estado === false) {
+      teacher.deletedAt = new Date();
     }
 
     // Actualizamos el docente
@@ -571,6 +577,7 @@ const createTeachers = async (req, res, next) => {
     const result = await sequelize.transaction(async (t) => {
       // Arreglo que contiene los datos de los docentes nuevos
       const newTeachers = [];
+      let teachersRestore = 0;
 
       // Registramos los datos de los usuarios
       for (const itemFila of dataExcel) {
@@ -671,8 +678,10 @@ const createTeachers = async (req, res, next) => {
         );
         // En caso de existir solo notificamos al usuario y creamos su inscripcion
         if (existingTeacher) {
-          if (existingTeacher.fecha_inactivacion !== null)
+          if (existingTeacher.fecha_inactivacion !== null){
             await existingTeacher.restore();
+            teachersRestore++;
+          }
         } else {
           // Generamos la contraseña
           const newPassword = password_generator.generate({
@@ -709,18 +718,25 @@ const createTeachers = async (req, res, next) => {
         return teacher.correo_institucional;
       });
 
-      if (teachers_correos.length === 0) {
+      if (teachers_correos.length === 0 && teachersRestore === 0) {
         res.status(400);
-        throw new Error("No hay docentes nuevos para agregar");
+        throw new Error(
+          "No hay docentes nuevos para agregar, tampoco para restaurar"
+        );
       }
       // Enviamos correo de confirmación de registro
-      await generateCorreo(teachers_correos);
+      if (teachers_correos.length > 0) {
+        await generateCorreo(teachers_correos);
+      }
 
-      return newTeachers.length;
+      return {
+        newTeachersL: newTeachers.length,
+        teachersRestoreN: teachersRestore,
+      };
     });
 
     res.status(200).json({
-      message: `Se han inscrito ${result} docentes satisfactoriamente al sistema`,
+      message: `Se han inscrito ${result.newTeachersL} docentes nuevos y se han restaurado ${result.teachersRestoreN} docentes satisfactoriamente al sistema`,
     });
   } catch (error) {
     const errorCargaTeacher = new Error(
