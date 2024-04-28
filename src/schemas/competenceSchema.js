@@ -30,7 +30,7 @@ const competenceSchema = z
           .string({
             invalid_type_error: "La descripción solo puede ser texto",
           })
-          .max(240, {
+          .max(250, {
             message:
               "La descripción de la competencia supera la cant. de caracteres permitida",
           }),
@@ -39,7 +39,7 @@ const competenceSchema = z
             "El estado de la competencia solo puede ser un valor booleano",
           required_error: "El estado de la competencia es requerido",
         }),
-        competencia_id: z.number({
+        categoria_id: z.number({
           invalid_type_error: "El id de la categoria debe ser numerico",
           required_error:
             "El identificador de la categoria asociada es necesario",
@@ -50,7 +50,7 @@ const competenceSchema = z
       .object({
         id: z
           .string({
-            required_error: "El identificador de la categoria es necesario",
+            required_error: "El identificador de la competencia es necesario",
           })
           .regex(/^[0-9]+$/, "Req no válido"),
       })
@@ -59,7 +59,7 @@ const competenceSchema = z
       .object({
         estado: z
           .string({
-            required_error: "El estado de la categoria es requerido",
+            required_error: "El estado de la competencia es requerido",
           })
           .regex(/^(0|1)$/, "El formato de la query no coinicde"),
       })
