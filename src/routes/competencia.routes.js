@@ -14,27 +14,27 @@ const router = Router();
 // @desc Endpoint encargado de la obtención de todas las competencias activas
 // @route GET /api/competencia
 // @access solo Admin
-router.get('/', [extractToken, authJWT, isAdmin, validateCompetenceData], competenciaController.getCompetencias);
+router.get('/', [extractToken, authJWT, isAdmin, validateCompetenceData], competenciaController.getCompetencias);//probado
 
 // @desc Endpoint encargado de la obtención de una competencia por Id
 // @route GET /api/competencia/:id
 // @access solo Admin
-router.get('/:id', [extractToken, authJWT, isAdmin, validateCompetenceData], competenciaController.getCompetenciaById);
+router.get('/:id', [extractToken, authJWT, isAdmin, validateCompetenceData], competenciaController.getCompetenciaById);//probado
 
 // @desc Endpoint encargado de la creación de una competencia
 // @route POST /api/competencia/create
 // @access solo Admin
-router.post('/create', [extractToken, authJWT, isAdmin, validateCompetenceData], competenciaController.createCompetencia);
+router.post('/create', [extractToken, authJWT, isAdmin, validateCompetenceData], competenciaController.createCompetencia);//probado
 
 // @desc Endpoint encargado de la actualización de una competencia dado su id 
 // @route PUT /api/competencia/update/:id
 // @access solo Admin
-router.put('/update/:id', [extractToken, authJWT, isAdmin, validateCompetenceData], competenciaController.updateCompetencia);
+router.put('/update/:id', [extractToken, authJWT, isAdmin, validateCompetenceData], competenciaController.updateCompetencia);//probado
 
 // @desc Endpoint encargado de la desvinculación de un resultado de aprendizaje de su competencia
 // @route PUT /api/competencia/unlinkRA/:id
 // @access solo Admin
-router.put('/unlinkRA/:id', [extractToken, authJWT, isAdmin], competenciaController.unlinkResultado);
+router.put('/unlinkRA/:id', [extractToken, authJWT, isAdmin], competenciaController.unlinkResultado);//probado
 
 // Exportamos el router
 export default router;

@@ -4,7 +4,7 @@ import sequelize from "../database/db.js";
 
 // Creamos el esquema del modelo
 const ResultadoAprendizaje = sequelize.define(
-  "Rsultados_Aprendizaje",
+  "Resultados_Aprendizaje",
   {
     id: {
       type: DataTypes.INTEGER,

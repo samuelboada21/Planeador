@@ -1,7 +1,5 @@
 import Resultado_Aprendizaje from "../models/ResultadoAprendizaje.js";
 import Competencia from "../models/Competencia.js";
-import Sequelize from "../database/db.js";
-import Resultado_Aprendizaje from "../models/ResultadoAprendizaje.js";
 
 /* --------- getResultados function -------------- */
 const getResultados = async (req, res, next) => {
@@ -73,9 +71,9 @@ const normalizeText = (text) => {
 /* --------- createResultado function -------------- */
 const createResultado = async (req, res, next) => {
   // Obtenemos los datos del RA a crear
-  const {descripcion, competencia_id, cantidadRA } = req.body;
+  const {descripcion, competencia_id} = req.body;
   try {
-    const [resultadoExist, competencia_Exist] = await Promise.all([
+    const [resultadoExist, competencia_Exist, cantidadRA] = await Promise.all([
       Resultado_Aprendizaje.findOne({
         where: {
           descripcion,
@@ -147,7 +145,7 @@ const updateResultado = async (req, res, next) => {
   // Obtenemos los datos a actualizar
   const { descripcion, estado, competencia_id } = req.body;
   try {
-    const [resultado, resultadoExist, competencia_exist] = await Promise.all([
+    const [resultado, resultadoExist, competencia_exist, cantidadRA] = await Promise.all([
       Resultado_Aprendizaje.findByPk(id),
       Resultado_Aprendizaje.findOne({
         where: {
@@ -155,6 +153,7 @@ const updateResultado = async (req, res, next) => {
         },
       }),
       Competencia.findByPk(competencia_id),
+      Resultado_Aprendizaje.count(),
     ]);
     // Verificamos el RA
     if (!resultado) {
@@ -183,11 +182,32 @@ const updateResultado = async (req, res, next) => {
         .status(400)
         .json({
           error:
-            "El id de la competenciaa proporcionado no corresponde con ninguna existente",
+            "El id de la competencia proporcionado no corresponde con ninguna existente",
         });
     }
+    // Obtener la categoría asociada a la competencia
+    const categoria = await competencia_exist.getCategoria();
+    if (!categoria) {
+      return res
+        .status(400)
+        .json({ error: "No se encontró la categoría asociada a la competencia" });
+    }
+     // Normalizar el nombre de la categoría
+     const categoriaNormalized = normalizeText(categoria.nombre);
+     // Definir el prefijo del código según la categoría
+     let codigoPrefix = "";
+     if (categoriaNormalized === "competencias genericas") {
+       codigoPrefix = "RAG";
+     } else if (categoriaNormalized === "competencias especificas") {
+       codigoPrefix = "RAE";
+     } else {
+       return res.status(400).json({ error: "Tipo de categoría no válido" });
+     }
+     // Construir el código del RA
+     const codigo = codigoPrefix + (cantidadRA);
     // Actualizamos el RA
     await resultado.update({
+      codigo,
       descripcion: descripcion.toLowerCase(),
       estado,
       competencia_id,

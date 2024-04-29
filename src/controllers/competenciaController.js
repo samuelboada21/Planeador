@@ -46,11 +46,9 @@ const getCompetenciaById = async (req, res, next) => {
       req.log.warn(
         `El usuario con id ${req.user.id} intento acceder a una competencia no especificada`
       );
-      return res
-        .status(400)
-        .json({
-          error: "No se encuentra ninguna competencia con el id especificado",
-        });
+      return res.status(400).json({
+        error: "No se encuentra ninguna competencia con el id especificado",
+      });
     }
     // Respondemos al usuario
     res.status(200).json(competencia);
@@ -84,29 +82,25 @@ const createCompetencia = async (req, res, next) => {
     ]);
     // Comprobamos que el nombre de la competencia sea unico
     if (competenciaExist)
-      return res
-        .status(400)
-        .json({
-          error: `El nombre de la competencia ${nombre} ya se encuentra registrado`,
-        });
+      return res.status(400).json({
+        error: `El nombre de la competencia ${nombre} ya se encuentra registrado`,
+      });
     // Comprobamos que el id de la categoria corresponda a uno válido
     if (!categoria_exist) {
       req.log.warn(
         `Intento de asociacion de una categoria inexistente a una nueva competencia por parte del usuario con id ${req.user.id}`
       );
-      return res
-        .status(400)
-        .json({
-          error:
-            "El id de categoria proporcionado no corresponde con ninguna existente",
-        });
+      return res.status(400).json({
+        error:
+          "El id de categoria proporcionado no corresponde con ninguna existente",
+      });
     }
     //código de la competencia automático
     const categoriaNormalized = normalizeText(categoria_exist.nombre);
     let codigoPrefix = "";
-    if (categoriaNormalized.nombre === "competencias genericas") {
+    if (categoriaNormalized === "competencias genericas") {
       codigoPrefix = "CG";
-    } else if (categoriaNormalized.nombre === "competencias especificas") {
+    } else if (categoriaNormalized === "competencias especificas") {
       codigoPrefix = "CE";
     } else {
       return res.status(400).json({ error: "Tipo de categoría no valido" });
@@ -156,51 +150,60 @@ const updateCompetencia = async (req, res, next) => {
       req.log.warn(
         `El usuario con id ${req.user.id} intento acceder a una competencia no especificada`
       );
-      return res
-        .status(400)
-        .json({
-          error: "No se encuentra ninguna competencia con el id especificado",
-        });
+      return res.status(400).json({
+        error: "No se encuentra ninguna competencia con el id especificado",
+      });
     }
     // Comprobamos que el nombre sea unico
     if (competenciaExist && competenciaExist.nombre !== competencia.nombre)
-      return res
-        .status(400)
-        .json({
-          error: `El nombre de la competencia ${nombre} ya se encuentra registrado`,
-        });
+      return res.status(400).json({
+        error: `El nombre de la competencia ${nombre} ya se encuentra registrado`,
+      });
     // Comprobamos que el id de la categoria corresponda a uno válido
     if (!categoria_exist) {
       req.log.warn(
         `Intento de asociacion de una categoria inexistente a una nueva competencia por parte del usuario con id ${req.user.id}`
       );
-      return res
-        .status(400)
-        .json({
-          error:
-            "El id de la categoria proporcionado no corresponde con ninguna existente",
-        });
+      return res.status(400).json({
+        error:
+          "El id de la categoria proporcionado no corresponde con ninguna existente",
+      });
     }
+    //código de la competencia automático
+    const categoriaNormalized = normalizeText(categoria_exist.nombre);
+    let codigoPrefix = "";
+    if (categoriaNormalized === "competencias genericas") {
+      codigoPrefix = "CG";
+    } else if (categoriaNormalized === "competencias especificas") {
+      codigoPrefix = "CE";
+    } else {
+      return res.status(400).json({ error: "Tipo de categoría no valido" });
+    }
+    // Consultamos la base de datos para obtener la cantidad de competencias asociadas a esta categoría
+    const cantidadCompetencias = await Competencia.count({
+      where: { categoria_id },
+    });
+    // Construimos el código de la competencia
+    const codigo = codigoPrefix + (cantidadCompetencias);
     // Actualizamos la competencia
     await competencia.update({
+      codigo,
       nombre: nombre.toUpperCase(),
       descripcion,
       estado,
       categoria_id,
     });
-    // Si la competencia es desactivada, deshabilitamos todos los resultados de aprendizaje asociadas a esta
-    if (!competencia.estado) {
-      await Resultado_Aprendizaje.update(
-        {
-          estado: false,
+    // ajustados el estado del ra para que coincida con su competencia
+    await Resultado_Aprendizaje.update(
+      {
+        estado: competencia.estado,
+      },
+      {
+        where: {
+          competencia_id: competencia.id,
         },
-        {
-          where: {
-            competencia_id: competencia.id,
-          },
-        }
-      );
-    }
+      }
+    );
     // Respondemos al usuario
     res.status(200).json({ message: "Competencia actualizada correctamente" });
   } catch (err) {
@@ -227,21 +230,17 @@ const unlinkResultado = async (req, res, next) => {
       req.log.warn(
         `El usuario con id ${req.user.id} intento desvincular un resultado de aprendizaje inexsistente o no asociada a la competencia especificada.`
       );
-      return res
-        .status(400)
-        .json({
-          error:
-            "No se encuentra ningun resultado de aprendizaje con el id especificado",
-        });
+      return res.status(400).json({
+        error:
+          "No se encuentra ningun resultado de aprendizaje con el id especificado",
+      });
     }
     // Desvinculamos el resultado de su competencia
     await resultado.setCompetencia(null);
     // Respondemos al usuario
-    res
-      .status(200)
-      .json({
-        message: `Resultado de aprendizaje ${resultado.codigo} desvinculado exitosamente`,
-      });
+    res.status(200).json({
+      message: `Resultado de aprendizaje ${resultado.codigo} desvinculado exitosamente`,
+    });
   } catch (err) {
     const errorUnlinkRA = new Error(
       `Ocurrio un problema al desvincular el RA de su competencia - ${err.message}`

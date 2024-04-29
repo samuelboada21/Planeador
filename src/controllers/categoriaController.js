@@ -45,11 +45,9 @@ const getCategoriaById = async (req, res, next) => {
       req.log.warn(
         `El usuario con id ${req.user.id} intento acceder a una categoria no especificada`
       );
-      return res
-        .status(400)
-        .json({
-          error: "No se encuentra ninguna categoria con el id especificado",
-        });
+      return res.status(400).json({
+        error: "No se encuentra ninguna categoria con el id especificado",
+      });
     }
     // Respondemos al usuario
     res.status(200).json(categoria);
@@ -77,11 +75,9 @@ const createCategoria = async (req, res) => {
       req.log.warn(
         `El usuario con id ${req.user.id} intento crear una categoria ya registrada`
       );
-      return res
-        .status(400)
-        .json({
-          error: `El nombre de la categoria ${nombre} ya se encuentra registrado`,
-        });
+      return res.status(400).json({
+        error: `El nombre de la categoria ${nombre} ya se encuentra registrado`,
+      });
     }
     // Creamos la categoria
     await Categoria.create({
@@ -120,22 +116,18 @@ const updateCategoria = async (req, res, next) => {
       req.log.warn(
         `El usuario con id ${req.user.id} intento acceder a una categoria inexistente.`
       );
-      return res
-        .status(400)
-        .json({
-          error: "No se encuentra ninguna categoria con el id especificado",
-        });
+      return res.status(400).json({
+        error: "No se encuentra ninguna categoria con el id especificado",
+      });
     }
     // Comprobamos que el nombre sea unico
     if (catFound && categoria.nombre !== catFound.nombre) {
       req.log.warn(
         `El usuario con id ${req.user.id} intento usar un nombre de categoria ya registrado`
       );
-      return res
-        .status(400)
-        .json({
-          error: `El nombre de categoria ${nombre} ya se encuentra registrado`,
-        });
+      return res.status(400).json({
+        error: `El nombre de categoria ${nombre} ya se encuentra registrado`,
+      });
     }
     // Actualizamos la categoria
     await categoria.update({
@@ -143,19 +135,17 @@ const updateCategoria = async (req, res, next) => {
       descripcion,
       estado,
     });
-    // Si la categoria es desactivada, deshabilitamos todas las categorias asociadas a esta
-    if (!categoria.estado) {
-      await Competencia.update(
-        {
-          estado: false,
+    // ajustamos el estado de las competencias para que sean el mismo de la categoria
+    await Competencia.update(
+      {
+        estado: categoria.estado,
+      },
+      {
+        where: {
+          categoria_id: categoria.id,
         },
-        {
-          where: {
-            categoria_id: categoria.id,
-          },
-        }
-      );
-    }
+      }
+    );
     // Respondemos al usuario
     res.status(200).json({ message: "Categoria actualizada correctamente" });
   } catch (err) {
@@ -182,20 +172,16 @@ const unlinkCompetencia = async (req, res, next) => {
       req.log.warn(
         `El usuario con id ${req.user.id} intento desvincular una competencia inexsistente o no asociada a la categoria especificada.`
       );
-      return res
-        .status(400)
-        .json({
-          error: "No se encuentra ninguna competencia con el id especificado",
-        });
+      return res.status(400).json({
+        error: "No se encuentra ninguna competencia con el id especificado",
+      });
     }
     // Desvinculamos la competencia de su categoria
     await competencia.setCategoria(null);
     // Respondemos al usuario
-    res
-      .status(200)
-      .json({
-        message: `Competencia ${competencia.nombre} desvinculada exitosamente`,
-      });
+    res.status(200).json({
+      message: `Competencia ${competencia.nombre} desvinculada exitosamente`,
+    });
   } catch (err) {
     const errorUnlinkComp = new Error(
       `Ocurrio un problema al desvincular la competencia de su categoria - ${err.message}`
