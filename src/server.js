@@ -19,6 +19,9 @@ import "./database/associations.js";
 //Importamos las rutas de la API
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
+import categoriaRoutes from './routes/categoria.routes.js';
+import competenciaRoutes from './routes/competencia.routes.js';
+import resultadoRoutes from './routes/resultado.routes.js';
 
 // Cargar las variables de entorno desde el archivo .env
 dotenv.config();
@@ -74,6 +77,9 @@ app.use(
 //Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/categoria', categoriaRoutes);
+app.use('/api/competencia', competenciaRoutes);
+app.use('/api/ra',resultadoRoutes);
 
 // En caso de acceder a una ruta no especificada
 app.all('*', (req, res) => {

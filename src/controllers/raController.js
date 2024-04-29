@@ -139,140 +139,102 @@ const createResultado = async (req, res, next) => {
     next(errorCreateRA);
   }
 };
-/**
- * 
-**
-**
-*
-*
-*
-*
-*
 
-*
-**
- */
-
-/* --------- updateCompetencia function -------------- */
-const updateCompetencia = async (req, res, next) => {
-  // Obtenemos el id de la categoria a actualizar
+/* --------- updateResultado function -------------- */
+const updateResultado = async (req, res, next) => {
+  // Obtenemos el id del RA a actualizar
   const { id } = req.params;
   // Obtenemos los datos a actualizar
-  const { nombre, descripcion, estado, categoria_id } = req.body;
+  const { descripcion, estado, competencia_id } = req.body;
   try {
-    const [competencia, competenciaExist, categoria_exist] = await Promise.all([
-      Competencia.findByPk(id),
-      Competencia.findOne({
+    const [resultado, resultadoExist, competencia_exist] = await Promise.all([
+      Resultado_Aprendizaje.findByPk(id),
+      Resultado_Aprendizaje.findOne({
         where: {
-          nombre,
+          descripcion,
         },
       }),
-      Categoria.findByPk(categoria_id),
+      Competencia.findByPk(competencia_id),
     ]);
-    // Verificamos la competencia
-    if (!competencia) {
+    // Verificamos el RA
+    if (!resultado) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento acceder a una competencia no especificada`
+        `El usuario con id ${req.user.id} intento acceder a un RA no especificado`
       );
       return res
         .status(400)
         .json({
-          error: "No se encuentra ninguna competencia con el id especificado",
+          error: "No se encuentra ningun resultado de aprendizaje con el id especificado",
         });
     }
     // Comprobamos que el nombre sea unico
-    if (competenciaExist && competenciaExist.nombre !== competencia.nombre)
+    if (resultadoExist && resultadoExist.descripcion !== resultado.descripcion)
       return res
         .status(400)
         .json({
-          error: `El nombre de la competencia ${nombre} ya se encuentra registrado`,
+          error: `La descripcion ya se encuentra registrada`,
         });
-    // Comprobamos que el id de la categoria corresponda a uno válido
-    if (!categoria_exist) {
+    // Comprobamos que el id de la competencia corresponda a uno válido
+    if (!competencia_exist) {
       req.log.warn(
-        `Intento de asociacion de una categoria inexistente a una nueva competencia por parte del usuario con id ${req.user.id}`
+        `Intento de asociacion de una competencia inexistente a un nuevo RA por parte del usuario con id ${req.user.id}`
       );
       return res
         .status(400)
         .json({
           error:
-            "El id de la categoria proporcionado no corresponde con ninguna existente",
+            "El id de la competenciaa proporcionado no corresponde con ninguna existente",
         });
     }
-    // Actualizamos la competencia
-    await competencia.update({
-      nombre: nombre.toUpperCase(),
-      descripcion,
+    // Actualizamos el RA
+    await resultado.update({
+      descripcion: descripcion.toLowerCase(),
       estado,
-      categoria_id,
+      competencia_id,
     });
-    // Si la competencia es desactivada, deshabilitamos todos los resultados de aprendizaje asociadas a esta
-    if (!competencia.estado) {
-      await Resultado_Aprendizaje.update(
-        {
-          estado: false,
-        },
-        {
-          where: {
-            competencia_id: competencia.id,
-          },
-        }
-      );
-    }
     // Respondemos al usuario
-    res.status(200).json({ message: "Competencia actualizada correctamente" });
+    res.status(200).json({ message: "Resultado de aprendizaje actualizado correctamente" });
   } catch (err) {
-    const errorUpdateComp = new Error(
-      `Ocurrio un problema al actualizar la competencia - ${err.message}`
+    const errorUpdateRes= new Error(
+      `Ocurrio un problema al actualizar el resultado de aprendizaje - ${err.message}`
     );
-    errorUpdateComp.stack = err.stack;
-    next(errorUpdateComp);
+    errorUpdateRes.stack = err.stack;
+    next(errorUpdateRes);
   }
 };
 
 /* --------- removeResultado function -------------- */
-const unlinkResultado = async (req, res, next) => {
-  // Obtenemos el identificador del resultado de aprendizaje
+const deleteResultado = async (req, res, next) => {
+  // Obtenemos el identificador del RA
   const { id } = req.params;
   try {
-    console.log(id);
-    // Obtenemos el resultado a desasociar
-    const resultado = await Resultado_Aprendizaje.findByPk(id, {
-      include: [Competencia],
-    });
-    // verificamos el RA
+    // Verificamos la existencia del RA
+    const resultado = await Resultado_Aprendizaje.findByPk(id);
     if (!resultado) {
-      req.log.warn(
-        `El usuario con id ${req.user.id} intento desvincular un resultado de aprendizaje inexsistente o no asociada a la competencia especificada.`
-      );
+      req.log.warn("Intento de desvinculación de un RA inexistente");
       return res
         .status(400)
-        .json({
-          error:
-            "No se encuentra ningun resultado de aprendizaje con el id especificado",
-        });
+        .json({ error: "No se encontro el resultado de aprendizaje especificado" });
     }
-    // Desvinculamos el resultado de su competencia
-    await resultado.setCompetencia(null);
-    // Respondemos al usuario
-    res
-      .status(200)
-      .json({
-        message: `Resultado de aprendizaje ${resultado.codigo} desvinculado exitosamente`,
-      });
-  } catch (err) {
-    const errorUnlinkRA = new Error(
-      `Ocurrio un problema al desvincular el RA de su competencia - ${err.message}`
+    // Eliminamos el RA
+    await resultado.destroy();
+    //respondemos al usuario
+    res.status(200).json({
+      message: "El resultado de aprendizaje ha sido eliminado correctamente",
+    });
+  } catch (error) {
+    const errorDelRes= new Error(
+      `Ocurrio un problema al intentar elimminar el resultado de aprendizaje - ${error.message}`
     );
-    errorUnlinkRA.stack = err.stack;
-    next(errorUnlinkRA);
+    errorDelRes.stack = error.stack;
+    next(errorDelRes);
   }
 };
 const controller = {
-  getCompetencias,
-  getCompetenciaById,
-  createCompetencia,
-  updateCompetencia,
-  unlinkResultado,
+  getResultados,
+  getResultadoById,
+  createResultado,
+  updateResultado,
+  deleteResultado,
 };
 export default controller;

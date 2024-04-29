@@ -4,6 +4,7 @@ import PasswordReset from '../models/PasswordReset.js';
 import Categoria from '../models/Categoria.js';
 import Competencia from '../models/Competencia.js';
 import Resultado_Aprendizaje from '../models/ResultadoAprendizaje.js';
+
 // Definimos la relación Usuario - PasswordReset
 User.hasOne(PasswordReset, { foreignKey: 'usuario_id', onDelete: 'RESTRICT' });
 PasswordReset.belongsTo(User, {
