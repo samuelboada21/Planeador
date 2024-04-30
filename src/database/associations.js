@@ -4,6 +4,10 @@ import PasswordReset from '../models/PasswordReset.js';
 import Categoria from '../models/Categoria.js';
 import Competencia from '../models/Competencia.js';
 import Resultado_Aprendizaje from '../models/ResultadoAprendizaje.js';
+import Materia from '../models/Materia.js';
+import UnidadTematica from '../models/UnidadTematica.js';
+import Subtema from '../models/Subtema.js';
+import MateriaCompetencia from '../models/MateriaCompetencia.js';
 
 // Definimos la relación Usuario - PasswordReset
 User.hasOne(PasswordReset, { foreignKey: 'usuario_id', onDelete: 'RESTRICT' });
@@ -24,5 +28,23 @@ Competencia.belongsTo(Categoria, {
 // Definimos la relación Competencia - Resultado_Aprendizaje
 Competencia.hasMany(Resultado_Aprendizaje, { foreignKey: 'competencia_id', onDelete: 'RESTRICT' });
 Resultado_Aprendizaje.belongsTo(Competencia, {
+    foreignKey: 'competencia_id'
+});
+
+// Definimos la relación Materia - Unidad Tematica
+Materia.hasMany(UnidadTematica, { foreignKey: 'materia_id', onDelete: 'RESTRICT' });
+UnidadTematica.belongsTo(Materia, {
+    foreignKey: 'materia_id'
+});
+
+// Definimos la relación Unidad Tematica - Subtema
+UnidadTematica.hasMany(Subtema, { foreignKey: 'unidad_tematica_id', onDelete: 'RESTRICT' });
+Subtema.belongsTo(UnidadTematica, {
+    foreignKey: 'unidad_tematica_id'
+});
+
+// Definimos la relación Materia - Competencia
+Materia.belongsToMany(Competencia, { through: MateriaCompetencia, foreignKey: 'materia_id'});
+Competencia.belongsToMany(Materia, {through: MateriaCompetencia,
     foreignKey: 'competencia_id'
 });

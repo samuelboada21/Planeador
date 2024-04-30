@@ -6,7 +6,7 @@ import encryptPasswd from "../util/encryptPassword.js";
 import generateCorreo from "../util/emailGenerator.js";
 import sequelize from "../database/db.js";
 import XLSX from "xlsx";
-import { tieneDuplicados } from "../util/duplicatedTeachers.js";
+import { tieneDuplicados } from "../util/duplicatedData.js";
 import logger from "../middlewares/logger.js";
 
 /* --------- getProfile function -------------- */
