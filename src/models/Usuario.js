@@ -37,7 +37,6 @@ const Usuario = sequelize.define(
     },
     correo_personal: {
       type: DataTypes.STRING,
-      allowNull: false,
       unique: true,
     },
     correo_institucional: {
@@ -59,6 +58,7 @@ const Usuario = sequelize.define(
     },
     estado: {
       type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: true,
     },
     rol_id: {

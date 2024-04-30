@@ -1,43 +1,40 @@
 import { DataTypes } from "sequelize";
 //Importamos el objeto de conexión
 import sequelize from "../database/db.js";
-
 // Creamos el esquema del modelo
-const ResultadoAprendizaje = sequelize.define(
-  "Resultados_Aprendizaje",
+const UnidadTematica = sequelize.define(
+  "Unidades_Tematicas",
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    codigo:{
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    descripcion: {
+    nombre: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
         notEmpty: {
-          msg: "La descripcion del RA no puede ser vacio",
+          msg: "El nombre de la unidad tematica no puede ser vacio",
         },
       },
-      unique: {
-        name: "descripcion_ra",
-        msg: "Descripcion del resultado de aprendizaje ya en uso",
-      },
     },
-    estado: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true,
+    descripcion: {
+      type: DataTypes.TEXT,
     },
-    competencia_id: {
+    materia_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "Competencias",
+        model: "Materias",
+        key: "id",
+      },
+    },
+    detalles_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "Detalles_Planeadores",
         key: "id",
       },
     },
@@ -49,6 +46,5 @@ const ResultadoAprendizaje = sequelize.define(
     freezeTableName: true,
   }
 );
-
 // Exportamos el modelo
-export default ResultadoAprendizaje;
+export default UnidadTematica;

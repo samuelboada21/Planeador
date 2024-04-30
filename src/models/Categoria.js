@@ -30,6 +30,7 @@ const Categoria = sequelize.define(
     },
     estado: {
       type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: true,
     },
   },
