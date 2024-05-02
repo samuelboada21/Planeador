@@ -3,6 +3,8 @@ import Competencia from "../models/Competencia.js";
 import Materia from "../models/Materia.js";
 import XLSX from "xlsx";
 import { tieneDuplicadosMateria } from "../util/duplicatedData.js";
+import sequelize from "../database/db.js";
+import logger from '../middlewares/logger.js'
 
 /* --------- getMaterias function -------------- */
 const getMaterias = async (req, res, next) => {
@@ -240,8 +242,7 @@ const createMaterias = async (req, res, next) => {
     }
     // Obtenemos todos los docentes existentes
     const existingMaterias = await Materia.findAll({
-      attributes: ["id", "codigo"],
-      paranoid: false,
+      attributes: ["codigo"]
     });
 
     //Inicializamos la transacción
@@ -251,14 +252,7 @@ const createMaterias = async (req, res, next) => {
       // Registramos los datos de las materias
       for (const itemFila of dataExcel) {
         // Validar las cabeceras del archivo
-        if (
-          !itemFila["semestre"] ||
-          !itemFila["codigo"] ||
-          !itemFila["cursos"] ||
-          !itemFila["obligatorio"] ||
-          !itemFila["electivo"] ||
-          !itemFila["creditos"]
-        ) {
+        if (!itemFila["semestre"]||!itemFila["codigo"]||!itemFila["cursos"]||!itemFila["tipo"]||!itemFila["creditos"]){
           res.status(400);
           throw new Error("Formato de archivo no correspondiente");
         }
@@ -281,25 +275,25 @@ const createMaterias = async (req, res, next) => {
 
         // Validamos el formato del nombre
         const regexName =
-          /^(?! )[A-Za-zÀ-ÖØ-öø-ÿ]+(?: [A-Za-zÀ-ÖØ-öø-ÿ]+)*(?<! )$/;
+        /^(?! )[A-Za-zÀ-ÖØ-öø-ÿ.]+(?: [A-Za-zÀ-ÖØ-öø-ÿ.]+)*(?<! )$/;
         // Verifica si el nombre cumple con el formato requerido
-        if (!regexName.test(itemFila["nombre"])) {
+        if (!regexName.test(itemFila["cursos"])) {
           res.status(400);
           throw new Error("El formato de nombre no es válido");
         }
-        const nombre = itemFila["nombre"];
+        const nombre = itemFila["cursos"];
         // Validamos el formato de los campos "Obligatorio" y "Electivo" y asignamos el valor al campo "tipo"
         const tipo =
-          itemFila["Obligatorio"].toLowerCase() === "x"
+          itemFila["tipo"].toLowerCase() === "obligatorio"
             ? true
-            : itemFila["Electivo"].toLowerCase() === "x"
+            : itemFila["tipo"].toLowerCase() === "electivo"
             ? false
             : null;
         // Verificamos si se marcó tanto "Obligatorio" como "Electivo", lo cual no es válido
         if (tipo === null) {
           res.status(400);
           throw new Error(
-            "Debe marcar solo una opción entre 'Obligatorio' y 'Electivo'"
+            "Debe especificar si el curso es obligatirio o electivo"
           );
         }
 
@@ -311,15 +305,17 @@ const createMaterias = async (req, res, next) => {
         }
         const creditos = itemFila["creditos"];
 
-        // Verificamos si la materia ya existe tanto en las materias actuales como inactivas
-        const existingMateria = existingMaterias.find(
-          (materia) => materia.codigo === codigo
-        );
-        // En caso de no existir creamos la materi
-        if (!existingMateria) {
+        // Buscar la materia existente con el mismo código
+        const materiaEncontrada = await Materia.findOne({
+          where: {
+            codigo: codigo
+          }
+        });
+        // En caso de no existir creamos la materia
+        if (!materiaEncontrada) {
           newMaterias.push({
             codigo,
-            nombre,
+            nombre: nombre.toUpperCase(),
             tipo,
             creditos,
             semestre,
@@ -348,6 +344,34 @@ const createMaterias = async (req, res, next) => {
     next(errorCargaMateria);
   }
 };
+/* --------- deleteMateria function -------------- */
+const deleteMateria = async (req, res, next) => {
+  // Obtenemos el identificador de la materia
+  const { id } = req.params;
+
+  try {
+    // Verificamos la existencia de la materia
+    const materia = await Materia.findByPk(id);
+
+    if (!materia) {
+      req.log.warn("Intento de desvinculación de una materia inexistente");
+      return res
+        .status(400)
+        .json({ error: "No se encontro la materia especificada" });
+    }
+    // Eliminamos la cuenta del usuario
+    await materia.destroy();
+    res.status(200).json({
+      message: "La materia ha sido desvinculada de la plataforma correctamente",
+    });
+  } catch (error) {
+    const errorDelMat = new Error(
+      `Ocurrio un problema al intentar desvincular la materia - ${error.message}`
+    );
+    errorDelMat.stack = error.stack;
+    next(errorDelMat);
+  }
+};
 
 const controller = {
   getMaterias,
@@ -356,6 +380,7 @@ const controller = {
   updateMateria,
   unlinkUnidades,
   createMaterias,
+  deleteMateria
 };
 
 export default controller;
