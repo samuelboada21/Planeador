@@ -40,6 +40,16 @@ const materiaSchema = z
             message:
               "Los creditos no corresponden con el formato, debe contener 1 digito",
           }),
+          semestre: z
+          .string({
+            invalid_type_error:
+              "El semestre de la materia solo pueden ser texto",
+            required_error: "El semestre de la materia es requerido",
+          })
+          .refine((value) => /^\d{1,2}$/.test(value), {
+            message:
+              "El semestre no corresponden con el formato, debe contener 1 o 2 digitos",
+          }),
         estado: z.boolean({
           invalid_type_error:
             "El estado de la materia solo puede ser un valor booleano",

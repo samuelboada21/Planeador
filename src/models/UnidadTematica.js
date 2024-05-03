@@ -30,14 +30,6 @@ const UnidadTematica = sequelize.define(
         key: "id",
       },
     },
-    // detalles_id: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: true,
-    //   references: {
-    //     model: "Detalles_Planeadores",
-    //     key: "id",
-    //   },
-    // },
   },
   {
     timestamps: true,

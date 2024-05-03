@@ -20,27 +20,27 @@ const router = Router();
 // @desc Endpoint encargado de la obtención de todas las materias activas
 // @route GET /api/materia
 // @access solo Admin
-router.get('/', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.getMaterias);//
+router.get('/', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.getMaterias);//probado
 
 // @desc Endpoint encargado de la obtención de una materia por id
 // @route GET /api/materia/:id
 // @access solo Admin
-router.get('/:id', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.getMateriaById);//
+router.get('/:id', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.getMateriaById);//probado
 
 // @desc Endpoint encargado de la creación de una materia
 // @route POST /api/materia/create
 // @access solo Admin
-router.post('/create', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.createMateria);//
+router.post('/create', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.createMateria);//probado
 
 // @desc Endpoint encargado de la carga de excel con el lsitado de materia
 // @route PUT /api/materia/createMaterias
 // @access solo Admin
-router.post('/createMaterias', [extractToken, authJWT, isAdmin, fileupload(), filePayloadExist, fileExcelLimiter('.xlsx'), fileSizeLimiter], materiaController.createMaterias);//
+router.post('/createMaterias', [extractToken, authJWT, isAdmin, fileupload(), filePayloadExist, fileExcelLimiter('.xlsx'), fileSizeLimiter], materiaController.createMaterias);//probado
 
 // @desc Endpoint encargado de la actualización de una categoria
 // @route PUT /api/materia/update/:id
 // @access solo Admin
-router.put('/update/:id', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.updateMateria);//
+router.put('/update/:id', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.updateMateria);//probado
 
 // @desc Endpoint encargado de la desvinculación de una unidad tematica de su materia
 // @route PUT /api/materia/unlinkUnidad/:id
