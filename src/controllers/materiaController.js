@@ -1,10 +1,12 @@
 import UnidadTematica from "../models/UnidadTematica.js";
 import Subtema from "../models/Subtema.js";
 import Competencia from "../models/Competencia.js";
+import MateriaCompetencia from "../models/MateriaCompetencia.js";
 import Materia from "../models/Materia.js";
 import XLSX from "xlsx";
 import { tieneDuplicadosMateria } from "../util/duplicatedData.js";
 import sequelize from "../database/db.js";
+import { asignCompetences } from "../util/createdJoins.js";
 import logger from '../middlewares/logger.js'
 
 /* --------- getMaterias function -------------- */
@@ -89,7 +91,8 @@ const getMateriaById = async (req, res, next) => {
 /* --------- createMateria function -------------- */
 const createMateria = async (req, res) => {
   // Obtenemos los datos de la materoa a crear
-  const { codigo, nombre, tipo, creditos, semestre } = req.body;
+  const { codigo, nombre, tipo, creditos, semestre, competencias } = req.body;
+  let result;
   try {
     // Comprobamos que el codigo sea unico
     const matFound = await Materia.findOne({
@@ -105,14 +108,21 @@ const createMateria = async (req, res) => {
         error: `El codigo de la materia ${codigo} ya se encuentra registrado`,
       });
     }
-    // Creamos la materia
-    await Materia.create({
-      codigo,
-      nombre: nombre.toUpperCase(),
-      tipo,
-      creditos,
-      semestre,
-    });
+    // Iniciamos la transacción
+    result = await sequelize.transaction(async (t) => {
+      //creamos la materia
+      const materia = await Materia.create({
+        codigo,
+        nombre: nombre.toUpperCase(),
+        tipo,
+        creditos,
+        semestre,
+      }, {transaction: t});
+
+      //asignamos las competencias
+      await asignCompetences(materia.id, competencias, t, res);
+      return materia;
+    })
     // Respondemos al usuario
     res.status(200).json({ message: "Materia creada exitosamente" });
   } catch (err) {
@@ -129,7 +139,7 @@ const updateMateria = async (req, res, next) => {
   // Obtenemos el id de la materia a actualizar
   const { id } = req.params;
   // Obtenemos los datos a actualizar
-  const { codigo, nombre, tipo, creditos, semestre, estado } = req.body;
+  const { codigo, nombre, tipo, creditos, semestre, estado, competencias } = req.body;
   try {
     // Hacemos las verificaciones de la materia en paralelo
     const [materia, matFound] = await Promise.all([
@@ -158,15 +168,26 @@ const updateMateria = async (req, res, next) => {
         error: `El codigo de materia ${codigo} ya se encuentra registrado`,
       });
     }
-    // Actualizamos la materia
-    await materia.update({
-      codigo,
-      nombre: nombre.toUpperCase(),
-      tipo,
-      creditos,
-      semestre,
-      estado,
+
+    // Iniciamos la transacción
+    await sequelize.transaction(async (t) => {
+      // Actualizamos los datos de la materia
+      await materia.update({
+        codigo,
+        nombre: nombre.toUpperCase(),
+        tipo,
+        creditos,
+        semestre,
+        estado
+      }, { transaction: t });
+
+      // Eliminamos todas las asociaciones de competencias actuales
+      await MateriaCompetencia.destroy({ where: { materia_id: id } }, { transaction: t });
+
+      // Asignamos las nuevas competencias
+      await asignCompetences(id, competencias, t, res);
     });
+
     // Respondemos al usuario
     res.status(200).json({ message: "Materia actualizada correctamente" });
   } catch (err) {
@@ -348,31 +369,28 @@ const deleteMateria = async (req, res, next) => {
 
   try {
     // Verificamos la existencia de la materia
-    // const materia = await Materia.findByPk(id);
     const materia = await Materia.findByPk(id, { include: [{ model: UnidadTematica, include: Subtema }] });
-    
     if (!materia) {
       req.log.warn("Intento de desvinculación de una materia inexistente");
       return res
         .status(400)
-        .json({ error: "No se encontro la materia especificada" });
+        .json({ error: "No se encontró la materia especificada" });
     }
     // Eliminar todos los subtemas asociados a las unidades temáticas de la materia
-    await Promise.all(materia.UnidadTematicas.map(async (unidad) => {
-      await Subtema.destroy({ where: { UnidadTematicaId: unidad.id } });
+    await Promise.all(materia.Unidades_Tematicas.map(async (unidad) => {
+      await Subtema.destroy({ where: { unidad_tematica_id: unidad.id } });
     }));
     // Eliminar todas las unidades temáticas asociadas a la materia
-    await UnidadTematica.destroy({ where: { MateriaId: materia.id } });
+    await UnidadTematica.destroy({ where: { materia_id: materia.id } });
     // Eliminar la materia misma
     await materia.destroy();
-    // Eliminamos la cuenta del usuario
-    // await materia.destroy();
-    // res.status(200).json({
-    //   message: "La materia ha sido desvinculada de la plataforma correctamente",
-    // });
+    // Respondemos al usuario
+    res.status(200).json({
+      message: "La materia ha sido desvinculada de la plataforma correctamente",
+    });
   } catch (error) {
     const errorDelMat = new Error(
-      `Ocurrio un problema al intentar desvincular la materia - ${error.message}`
+      `Ocurrió un problema al intentar desvincular la materia - ${error.message}`
     );
     errorDelMat.stack = error.stack;
     next(errorDelMat);

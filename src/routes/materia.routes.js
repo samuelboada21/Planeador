@@ -33,11 +33,11 @@ router.get('/:id', [extractToken, authJWT, isAdmin, validateMateriaData], materi
 router.post('/create', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.createMateria);//probado
 
 // @desc Endpoint encargado de la carga de excel con el lsitado de materia
-// @route PUT /api/materia/createMaterias
+// @route POST /api/materia/createMaterias
 // @access solo Admin
 router.post('/createMaterias', [extractToken, authJWT, isAdmin, fileupload(), filePayloadExist, fileExcelLimiter('.xlsx'), fileSizeLimiter], materiaController.createMaterias);//probado
 
-// @desc Endpoint encargado de la actualización de una categoria
+// @desc Endpoint encargado de la actualización de una materia
 // @route PUT /api/materia/update/:id
 // @access solo Admin
 router.put('/update/:id', [extractToken, authJWT, isAdmin, validateMateriaData], materiaController.updateMateria);//probado
@@ -45,12 +45,12 @@ router.put('/update/:id', [extractToken, authJWT, isAdmin, validateMateriaData],
 // @desc Endpoint encargado de la desvinculación de una unidad tematica de su materia
 // @route PUT /api/materia/unlinkUnidad/:id
 // @access solo Admin
-router.put('/unlinkUnidad/:id', [extractToken, authJWT, isAdmin], materiaController.unlinkUnidades);//
+router.put('/unlinkUnidad/:id', [extractToken, authJWT, isAdmin], materiaController.unlinkUnidades);//probado
 
 // @desc Endpoint encargado de la eliminacion de una materia
-// @route PUT /api/materia/delete/:id
+// @route DELETE /api/materia/delete/:id
 // @access solo Admin
-router.delete('/delete/:id', [extractToken, authJWT, isAdmin], materiaController.deleteMateria);//
+router.delete('/delete/:id', [extractToken, authJWT, isAdmin], materiaController.deleteMateria);//probado
 
 // Exportamos el router
 export default router;

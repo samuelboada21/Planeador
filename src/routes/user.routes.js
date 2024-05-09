@@ -37,12 +37,12 @@ router.get('/teachers', [ extractToken, verifyJWT, isAdmin, validateUserData ], 
 router.get('/teacher/:id', [ extractToken, verifyJWT, isAdmin, validateUserData ], userController.getTeacherById);//probado
 
 // @desc Endpoint encargado de la creacion de un docente
-// @route GET /api/user/createTeacher
+// @route POST /api/user/createTeacher
 // @access Docente
 router.post('/createTeacher', [extractToken, verifyJWT, isAdmin, validateUserData ], userController.createTeacher); //probado
 
-// @desc Endpoint encargado de la creacion de un docente
-// @route GET /api/user/createTeacher
+// @desc Endpoint encargado de la creacion de docentes por medio de un excel
+// @route POST /api/user/createTeachers
 // @access Docente
 router.post('/createTeachers', [extractToken, verifyJWT, isAdmin, fileupload(), filePayloadExist, fileExcelLimiter('.xlsx'), fileSizeLimiter], userController.createTeachers);//probado
 

@@ -55,7 +55,7 @@ const getUnidadById = async (req, res, next) => {
     res.status(200).json(unidad);
   } catch (err) {
     const errorGetUniId = new Error(
-      `Ocurrio un problema al obtener los datos de la materia especificada - ${err.message}`
+      `Ocurrio un problema al obtener los datos de la unidad tematica especificada - ${err.message}`
     );
     errorGetUniId.stack = err.stack;
     next(errorGetUniId);
@@ -64,7 +64,7 @@ const getUnidadById = async (req, res, next) => {
 
 /* --------- createUnidad function -------------- */
 const createUnidad = async (req, res) => {
-  // Obtenemos los datos de la materoa a crear
+  // Obtenemos los datos de la unidad a crear
   const { nombre, descripcion, materia_id } = req.body;
   try {
     // Buscar la materia para la que se quiere crear la unidad
@@ -139,7 +139,7 @@ const updateUnidad = async (req, res, next) => {
         `El usuario con id ${req.user.id} intento usar un nombre de unidad tematica ya registrado en la materia`
       );
       return res.status(400).json({
-        error: `El nombre de la unidad tematica ${nombre} ya se encuentra registrado`,
+        error: `El nombre de la unidad tematica ${nombre} ya se encuentra registrado en la materia`,
       });
     }
     // Actualizamos la unidad
@@ -180,7 +180,7 @@ const unlinkSubtema = async (req, res, next) => {
       });
     }
     // Desvinculamos el subtema de su unidad tematica
-    await subtema.setUnidad(null);
+    await subtema.setUnidades_Tematica(null);
     // Respondemos al usuario
     res.status(200).json({
       message: `Subtema ${subtema.nombre} desvinculado exitosamente`,

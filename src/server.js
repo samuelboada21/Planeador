@@ -24,6 +24,7 @@ import competenciaRoutes from './routes/competencia.routes.js';
 import resultadoRoutes from './routes/resultado.routes.js';
 import materiaRoutes from './routes/materia.routes.js';
 import unidadRoutes from './routes/unidad.routes.js';
+import subtemaRoutes from './routes/subtema.routes.js';
 
 // Cargar las variables de entorno desde el archivo .env
 dotenv.config();
@@ -84,6 +85,7 @@ app.use('/api/competencia', competenciaRoutes);
 app.use('/api/ra',resultadoRoutes);
 app.use('/api/materia', materiaRoutes);
 app.use('/api/unidad', unidadRoutes);
+app.use('/api/subtema', subtemaRoutes);
 
 // En caso de acceder a una ruta no especificada
 app.all('*', (req, res) => {
