@@ -1,4 +1,5 @@
 import UnidadTematica from "../models/UnidadTematica.js";
+import Subtema from "../models/Subtema.js";
 import Competencia from "../models/Competencia.js";
 import Materia from "../models/Materia.js";
 import XLSX from "xlsx";
@@ -240,10 +241,6 @@ const createMaterias = async (req, res, next) => {
       res.status(400);
       throw new Error("No se permiten materias con codigos repetidos");
     }
-    // Obtenemos todos los docentes existentes
-    const existingMaterias = await Materia.findAll({
-      attributes: ["codigo"]
-    });
 
     //Inicializamos la transacción
     const result = await sequelize.transaction(async (t) => {
@@ -351,19 +348,28 @@ const deleteMateria = async (req, res, next) => {
 
   try {
     // Verificamos la existencia de la materia
-    const materia = await Materia.findByPk(id);
-
+    // const materia = await Materia.findByPk(id);
+    const materia = await Materia.findByPk(id, { include: [{ model: UnidadTematica, include: Subtema }] });
+    
     if (!materia) {
       req.log.warn("Intento de desvinculación de una materia inexistente");
       return res
         .status(400)
         .json({ error: "No se encontro la materia especificada" });
     }
-    // Eliminamos la cuenta del usuario
+    // Eliminar todos los subtemas asociados a las unidades temáticas de la materia
+    await Promise.all(materia.UnidadTematicas.map(async (unidad) => {
+      await Subtema.destroy({ where: { UnidadTematicaId: unidad.id } });
+    }));
+    // Eliminar todas las unidades temáticas asociadas a la materia
+    await UnidadTematica.destroy({ where: { MateriaId: materia.id } });
+    // Eliminar la materia misma
     await materia.destroy();
-    res.status(200).json({
-      message: "La materia ha sido desvinculada de la plataforma correctamente",
-    });
+    // Eliminamos la cuenta del usuario
+    // await materia.destroy();
+    // res.status(200).json({
+    //   message: "La materia ha sido desvinculada de la plataforma correctamente",
+    // });
   } catch (error) {
     const errorDelMat = new Error(
       `Ocurrio un problema al intentar desvincular la materia - ${error.message}`
