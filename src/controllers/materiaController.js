@@ -7,7 +7,7 @@ import XLSX from "xlsx";
 import { tieneDuplicadosMateria } from "../util/duplicatedData.js";
 import sequelize from "../database/db.js";
 import { asignCompetences } from "../util/createdJoins.js";
-import logger from '../middlewares/logger.js'
+import logger from "../middlewares/logger.js";
 
 /* --------- getMaterias function -------------- */
 const getMaterias = async (req, res, next) => {
@@ -111,18 +111,21 @@ const createMateria = async (req, res) => {
     // Iniciamos la transacción
     result = await sequelize.transaction(async (t) => {
       //creamos la materia
-      const materia = await Materia.create({
-        codigo,
-        nombre: nombre.toUpperCase(),
-        tipo,
-        creditos,
-        semestre,
-      }, {transaction: t});
+      const materia = await Materia.create(
+        {
+          codigo,
+          nombre: nombre.toUpperCase(),
+          tipo,
+          creditos,
+          semestre,
+        },
+        { transaction: t }
+      );
 
       //asignamos las competencias
       await asignCompetences(materia.id, competencias, t, res);
       return materia;
-    })
+    });
     // Respondemos al usuario
     res.status(200).json({ message: "Materia creada exitosamente" });
   } catch (err) {
@@ -139,7 +142,8 @@ const updateMateria = async (req, res, next) => {
   // Obtenemos el id de la materia a actualizar
   const { id } = req.params;
   // Obtenemos los datos a actualizar
-  const { codigo, nombre, tipo, creditos, semestre, estado, competencias } = req.body;
+  const { codigo, nombre, tipo, creditos, semestre, estado, competencias } =
+    req.body;
   try {
     // Hacemos las verificaciones de la materia en paralelo
     const [materia, matFound] = await Promise.all([
@@ -172,17 +176,23 @@ const updateMateria = async (req, res, next) => {
     // Iniciamos la transacción
     await sequelize.transaction(async (t) => {
       // Actualizamos los datos de la materia
-      await materia.update({
-        codigo,
-        nombre: nombre.toUpperCase(),
-        tipo,
-        creditos,
-        semestre,
-        estado
-      }, { transaction: t });
+      await materia.update(
+        {
+          codigo,
+          nombre: nombre.toUpperCase(),
+          tipo,
+          creditos,
+          semestre,
+          estado,
+        },
+        { transaction: t }
+      );
 
       // Eliminamos todas las asociaciones de competencias actuales
-      await MateriaCompetencia.destroy({ where: { materia_id: id } }, { transaction: t });
+      await MateriaCompetencia.destroy(
+        { where: { materia_id: id } },
+        { transaction: t }
+      );
 
       // Asignamos las nuevas competencias
       await asignCompetences(id, competencias, t, res);
@@ -267,10 +277,20 @@ const createMaterias = async (req, res, next) => {
     const result = await sequelize.transaction(async (t) => {
       // Arreglo que contiene los datos de las materias nuevas
       const newMaterias = [];
+      const competenciaIdsPorFila = [];
       // Registramos los datos de las materias
       for (const itemFila of dataExcel) {
+        // Arreglo para almacenar los IDs de las competencias
+        const competenciaIdsDeEstaFila = [];
         // Validar las cabeceras del archivo
-        if (!itemFila["semestre"]||!itemFila["codigo"]||!itemFila["cursos"]||!itemFila["tipo"]||!itemFila["creditos"]){
+        if (
+          !itemFila["semestre"] ||
+          !itemFila["codigo"] ||
+          !itemFila["cursos"] ||
+          !itemFila["tipo"] ||
+          !itemFila["creditos"] ||
+          !itemFila["competencias"]
+        ) {
           res.status(400);
           throw new Error("Formato de archivo no correspondiente");
         }
@@ -293,7 +313,7 @@ const createMaterias = async (req, res, next) => {
 
         // Validamos el formato del nombre
         const regexName =
-        /^(?! )[A-Za-zÀ-ÖØ-öø-ÿ.]+(?: [A-Za-zÀ-ÖØ-öø-ÿ.]+)*(?<! )$/;
+          /^(?! )[A-Za-zÀ-ÖØ-öø-ÿ.]+(?: [A-Za-zÀ-ÖØ-öø-ÿ.]+)*(?<! )$/;
         // Verifica si el nombre cumple con el formato requerido
         if (!regexName.test(itemFila["cursos"])) {
           res.status(400);
@@ -323,11 +343,33 @@ const createMaterias = async (req, res, next) => {
         }
         const creditos = itemFila["creditos"];
 
+        // Validamos si al menos una competencia fue pasada
+        const competencias = itemFila["competencias"].split(",");
+        if (competencias.length === 0) {
+          res.status(400);
+          throw new Error("Debe proporcionar al menos una competencia");
+        }
+        // Validamos si las competencias existen en la base de datos
+        for (const nombreCompetencia of competencias) {
+          const competenciaEncontrada = await Competencia.findOne({
+            where: {
+              nombre: nombreCompetencia.trim().toUpperCase(),
+            },
+          });
+          if (!competenciaEncontrada) {
+            res.status(400);
+            throw new Error(
+              `La competencia ${nombreCompetencia} no existe en la base de datos`
+            );
+          }
+          // Guardamos el ID de la competencia encontrada
+          competenciaIdsDeEstaFila.push(competenciaEncontrada.id);
+        }
         // Buscar la materia existente con el mismo código
         const materiaEncontrada = await Materia.findOne({
           where: {
-            codigo: codigo
-          }
+            codigo: codigo,
+          },
         });
         // En caso de no existir creamos la materia
         if (!materiaEncontrada) {
@@ -338,13 +380,22 @@ const createMaterias = async (req, res, next) => {
             creditos,
             semestre,
           });
+          competenciaIdsPorFila.push(competenciaIdsDeEstaFila);
         }
       }
       // Registramos las materias nuevas
-      await Materia.bulkCreate(newMaterias, {
-        returning: true,
+      const materiasCreadas = await Materia.bulkCreate(newMaterias, {
         transaction: t,
       });
+      // Asignamos las competencias a las materias creadas
+      for (let i = 0; i < materiasCreadas.length; i++) {
+        await asignCompetences(
+          materiasCreadas[i].id,
+          competenciaIdsPorFila[i],
+          t,
+          res
+        );
+      }
 
       return {
         newMateriasL: newMaterias.length,
@@ -369,7 +420,9 @@ const deleteMateria = async (req, res, next) => {
 
   try {
     // Verificamos la existencia de la materia
-    const materia = await Materia.findByPk(id, { include: [{ model: UnidadTematica, include: Subtema }] });
+    const materia = await Materia.findByPk(id, {
+      include: [{ model: UnidadTematica, include: Subtema }],
+    });
     if (!materia) {
       req.log.warn("Intento de desvinculación de una materia inexistente");
       return res
@@ -377,9 +430,11 @@ const deleteMateria = async (req, res, next) => {
         .json({ error: "No se encontró la materia especificada" });
     }
     // Eliminar todos los subtemas asociados a las unidades temáticas de la materia
-    await Promise.all(materia.Unidades_Tematicas.map(async (unidad) => {
-      await Subtema.destroy({ where: { unidad_tematica_id: unidad.id } });
-    }));
+    await Promise.all(
+      materia.Unidades_Tematicas.map(async (unidad) => {
+        await Subtema.destroy({ where: { unidad_tematica_id: unidad.id } });
+      })
+    );
     // Eliminar todas las unidades temáticas asociadas a la materia
     await UnidadTematica.destroy({ where: { materia_id: materia.id } });
     // Eliminar la materia misma
@@ -404,7 +459,7 @@ const controller = {
   updateMateria,
   unlinkUnidades,
   createMaterias,
-  deleteMateria
+  deleteMateria,
 };
 
 export default controller;
