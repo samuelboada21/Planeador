@@ -15,7 +15,8 @@ const accountTransport = {
         pass: email_password,
         clientId: oauth_client_id,
         clientSecret: oauth_client_secret,
-        refreshToken: oauth_refresh_token
+        refreshToken: oauth_refresh_token,
+        //falta accessToken ?
     },
     port: 465,
     secure: true
@@ -41,7 +42,7 @@ const mail_rover = () => {
             if (err) {
                 reject(new Error(`error al obtener token de acceso - ${err.message}`));
             } else {
-                accountTransport.auth.accessToken = token;
+                accountTransport.auth.accessToken = token;//falta en auth access token?
                 resolve(nodemailer.createTransport(accountTransport));
             }
         });

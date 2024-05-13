@@ -11,7 +11,7 @@ const getResultados = async (req, res, next) => {
       where: {
         estado: state,
       },
-      attributes: ["codigo", "descripcion", "estado"],
+      attributes: ["id","codigo", "descripcion", "estado"],
       include: {
         model: Competencia,
         attributes: ["nombre"],

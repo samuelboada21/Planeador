@@ -12,7 +12,7 @@ const getCompetencias = async (req, res, next) => {
       where: {
         estado: state,
       },
-      attributes: ["codigo", "nombre", "estado"],
+      attributes: ["id","codigo", "nombre", "estado"],
       include: {
         model: Resultado_Aprendizaje,
         attributes: ["codigo"],

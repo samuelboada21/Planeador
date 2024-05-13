@@ -7,7 +7,7 @@ const getSubtemas = async (req, res, next) => {
   try {
     // Obtenemos las unidades
     const subtemas = await Subtema.findAll({
-      attributes: ["nombre", "descripcion"],
+      attributes: ["id","nombre", "descripcion"],
       include: {
         model: UnidadTematica,
         attributes: ["nombre"],

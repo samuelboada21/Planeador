@@ -20,6 +20,7 @@ const getMaterias = async (req, res, next) => {
         estado: state,
       },
       attributes: [
+        "id",
         "codigo",
         "nombre",
         "tipo",

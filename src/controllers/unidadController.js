@@ -11,7 +11,7 @@ const getUnidades = async (req, res, next) => {
   try {
     // Obtenemos las unidades
     const unidades = await UnidadTematica.findAll({
-      attributes: ["nombre", "descripcion"],
+      attributes: ["id","nombre", "descripcion"],
       include: {
         model: Materia,
         attributes: ["codigo", "nombre"],
