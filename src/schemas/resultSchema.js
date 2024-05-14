@@ -12,7 +12,7 @@ const resultSchema = z
               "El codigo del resultado de aprendizaje solo puede ser texto",
             required_error: "El codigo del resultado de aprendizaje es requerido",
           })
-          .refine((value) => /^[A-Z]{2}\d+$/.test(value), {
+          .refine((value) => /^[A-Z]{3}\d+$/.test(value), {
             message: "El codigo no corresponde con el formato",
           }),
         descripcion: z
@@ -26,8 +26,8 @@ const resultSchema = z
           }),
         estado: z.boolean({
           invalid_type_error:
-            "El estado de la competencia solo puede ser un valor booleano",
-          required_error: "El estado de la competencia es requerido",
+            "El estado del resultado de aprendizaje solo puede ser un valor booleano",
+          required_error: "El estado del resultado de aprendizaje es requerido",
         }),
         competencia_id: z.number({
           invalid_type_error: "El id de la competencia debe ser numerico",
