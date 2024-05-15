@@ -57,7 +57,6 @@ const getTeachers = async (req, res, next) => {
         "nombre",
         "tipo_vinculacion",
         "departamento",
-        "area_formacion",
         "correo_personal",
         "correo_institucional",
         "celular",
@@ -93,7 +92,6 @@ const getTeacherById = async (req, res, next) => {
         "nombre",
         "tipo_vinculacion",
         "departamento",
-        "area_formacion",
         "correo_personal",
         "correo_institucional",
         "celular",
@@ -167,7 +165,6 @@ const updateTeacherDataDir = async (req, res, next) => {
     nombre,
     tipo_vinculacion,
     departamento,
-    area_formacion,
     correo_personal,
     correo_institucional,
     celular,
@@ -217,7 +214,6 @@ const updateTeacherDataDir = async (req, res, next) => {
       nombre,
       tipo_vinculacion,
       departamento,
-      area_formacion,
       correo_personal,
       correo_institucional,
       celular,
@@ -250,7 +246,6 @@ const getDirectors = async (req, res, next) => {
         "nombre",
         "tipo_vinculacion",
         "departamento",
-        "area_formacion",
         "correo_personal",
         "correo_institucional",
         "celular",
@@ -288,7 +283,6 @@ const getDirectorById = async (req, res) => {
         "nombre",
         "tipo_vinculacion",
         "departamento",
-        "area_formacion",
         "correo_personal",
         "correo_institucional",
         "celular",
@@ -325,7 +319,6 @@ const updateDirector = async (req, res, next) => {
     nombre,
     tipo_vinculacion,
     departamento,
-    area_formacion,
     correo_personal,
     correo_institucional,
     celular,
@@ -363,7 +356,6 @@ const updateDirector = async (req, res, next) => {
       nombre,
       tipo_vinculacion,
       departamento,
-      area_formacion,
       correo_personal,
       correo_institucional,
       celular,
@@ -465,7 +457,6 @@ const createTeacher = async (req, res, next) => {
     nombre,
     tipo_vinculacion,
     departamento,
-    area_formacion,
     correo_personal,
     correo_institucional,
     celular,
@@ -503,7 +494,6 @@ const createTeacher = async (req, res, next) => {
         nombre,
         tipo_vinculacion,
         departamento,
-        area_formacion,
         correo_personal,
         correo_institucional,
         celular,
@@ -587,7 +577,6 @@ const createTeachers = async (req, res, next) => {
           !itemFila["nombre"] ||
           !itemFila["tipo_vinculacion"] ||
           !itemFila["departamento"] ||
-          !itemFila["area_formacion"] ||
           !itemFila["correo_personal"] ||
           !itemFila["correo_institucional"] ||
           !itemFila["celular"]
@@ -632,17 +621,15 @@ const createTeachers = async (req, res, next) => {
           /^(?! )[a-zA-ZÀ-ÖØ-öø-ÿ0-9]+( [a-zA-ZÀ-ÖØ-öø-ÿ0-9]+)*(?<! )$/;
         if (
           !regextda.test(itemFila["tipo_vinculacion"]) ||
-          !regextda.test(itemFila["departamento"]) ||
-          !regextda.test(itemFila["area_formacion"])
+          !regextda.test(itemFila["departamento"])
         ) {
           res.status(400);
           throw new Error(
-            "El formato de tipo de vinculacion, departamento o area de formacion no son validos"
+            "El formato de tipo de vinculacion o departamento no son validos"
           );
         }
         const tipo_vinculacion = itemFila["tipo_vinculacion"];
         const departamento = itemFila["departamento"];
-        const area_formacion = itemFila["area_formacion"];
 
         // Validamos el formato del correo personal
         const regexMailpersonal = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -698,7 +685,6 @@ const createTeachers = async (req, res, next) => {
             nombre,
             tipo_vinculacion,
             departamento,
-            area_formacion,
             correo_personal,
             correo_institucional,
             celular,

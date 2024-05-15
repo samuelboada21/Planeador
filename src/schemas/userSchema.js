@@ -55,17 +55,6 @@ export const usuarioSchema = z
               "El departamento supera la cantidad de caracteres permitidos",
           }),
 
-        area_formacion: z
-          .string({
-            invalid_type_error: "El area de formacion solo puede ser texto",
-            required_error: "El area de formacion es requerido",
-          })
-          .min(4, { message: "El area de formacion es muy corto" })
-          .max(60, {
-            message:
-              "El area de formacion supera la cantidad de caracteres permitidos",
-          }),
-
         correo_personal: z
           .string({
             invalid_type_error: "El email personal solo puede ser texto",

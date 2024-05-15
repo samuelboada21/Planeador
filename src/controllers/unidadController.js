@@ -353,7 +353,7 @@ const controller = {
   getUnidadById,
   createUnidad,
   updateUnidad,
-  unlinkSubtema,
+  unlinkSubtema,//se va
   createUnidades,
   deleteUnidad,
 };

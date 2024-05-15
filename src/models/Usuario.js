@@ -31,10 +31,6 @@ const Usuario = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    area_formacion: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     correo_personal: {
       type: DataTypes.STRING,
       unique: true,
