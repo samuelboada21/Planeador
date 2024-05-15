@@ -100,7 +100,7 @@ export const refresh = (req, res) => {
                     tipo: foundUser.tipo
                 },
                 process.env.ACCESS_TOKEN_SECRET,
-                { expiresIn: '15m' }
+                { expiresIn: '8h' }
             );
 
             res.status(200).json({ accessToken });

@@ -15,8 +15,7 @@ const accountTransport = {
         pass: email_password,
         clientId: oauth_client_id,
         clientSecret: oauth_client_secret,
-        refreshToken: oauth_refresh_token,
-        //falta accessToken ?
+        refreshToken: oauth_refresh_token
     },
     port: 465,
     secure: true
@@ -33,6 +32,7 @@ const mail_rover = () => {
             "https://developers.google.com/oauthplayground"
         );
         oauth2Client.setCredentials({
+            
             refresh_token: accountTransport.auth.refreshToken,
             tls: {
                 rejectUnauthorized: false
@@ -40,9 +40,11 @@ const mail_rover = () => {
         });
         oauth2Client.getAccessToken((err, token) => {
             if (err) {
+                console.error("-->",err);
+                console.error("TOKEN:",token);
                 reject(new Error(`error al obtener token de acceso - ${err.message}`));
             } else {
-                accountTransport.auth.accessToken = token;//falta en auth access token?
+                accountTransport.auth.accessToken = token;
                 resolve(nodemailer.createTransport(accountTransport));
             }
         });
