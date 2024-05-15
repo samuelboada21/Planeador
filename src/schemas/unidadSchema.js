@@ -31,9 +31,6 @@ const unidadSchema = z
           required_error:
             "El identificador de la materia asociada es necesario",
         }),
-        detalles_id: z.number({
-          invalid_type_error: "El id del planeador debe ser numerico",
-        }),
       })
       .partial(),
     params: z

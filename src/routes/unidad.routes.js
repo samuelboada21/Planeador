@@ -46,7 +46,7 @@ router.put('/update/:id', [extractToken, authJWT, isAdmin, validateUnidadData], 
 // @desc Endpoint encargado de la desvinculación de un subtema de su unidad tematica
 // @route PUT /api/unidad/unlinkSubtema/:id
 // @access solo Admin
-router.put('/unlinkSubtema/:id', [extractToken, authJWT, isAdmin], unidadController.unlinkSubtema);//Probado
+router.put('/unlinkSubtema/:id', [extractToken, authJWT, isAdmin], unidadController.unlinkSubtema);//Probado, pero es mejor no desvincularlas si no eliminar los subtemas
 
 // @desc Endpoint encargado de la eliminacion de una unidad tematica
 // @route DELETE /api/unidad/delete/:id

@@ -45,12 +45,12 @@ router.put('/update/:id', [extractToken, authJWT, isAdmin, validateMateriaData],
 // @desc Endpoint encargado de la desvinculación de una unidad tematica de su materia
 // @route PUT /api/materia/unlinkUnidad/:id
 // @access solo Admin
-router.put('/unlinkUnidad/:id', [extractToken, authJWT, isAdmin], materiaController.unlinkUnidades);//probado
+router.put('/unlinkUnidad/:id', [extractToken, authJWT, isAdmin], materiaController.unlinkUnidades);//probado, pero es mejor no desvincularlas si no eliminar unidades temáticas
 
 // @desc Endpoint encargado de la eliminacion de una materia
 // @route DELETE /api/materia/delete/:id
 // @access solo Admin
-router.delete('/delete/:id', [extractToken, authJWT, isAdmin], materiaController.deleteMateria);//probado
+router.delete('/delete/:id', [extractToken, authJWT, isAdmin], materiaController.deleteMateria);//probado, pero es mejor no eliminar materias
 
 // Exportamos el router
 export default router;

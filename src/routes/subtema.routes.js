@@ -7,6 +7,12 @@ import authJWT from '../middlewares/verifyJWT.js';
 import isAdmin from '../middlewares/isAdmin.js';
 import {validateSubtemaData} from '../schemas/subtemaSchema.js'
 
+//Importamos para validar excels
+import fileupload from 'express-fileupload';
+import fileSizeLimiter from '../middlewares/fileSizeLimiter.js';
+import filePayloadExist from '../middlewares/filePayloadExist.js';
+import fileExcelLimiter from '../middlewares/fileExcelLimiter.js';
+
 // Inicializamos el router
 const router = Router();
 // Rutas
@@ -26,10 +32,10 @@ router.get('/:id', [extractToken, authJWT, isAdmin, validateSubtemaData], subtem
 // @access solo Admin
 router.post('/create', [extractToken, authJWT, isAdmin, validateSubtemaData], subtemaController.createSubtema);//probado
 
-// @desc Endpoint encargado de la creación de varios subtemas para una misma unidad
+// @desc Endpoint encargado de la creación de varios subtemas para una misma unidad por excel
 // @route POST /api/subtema/createSubtemas
 // @access solo Admin
-router.post('/createSubtemas', [extractToken, authJWT, isAdmin], subtemaController.createSubtemas);//probado
+router.post('/createSubtemas/:id', [extractToken, authJWT, isAdmin, fileupload(), filePayloadExist, fileExcelLimiter('.xlsx'), fileSizeLimiter], subtemaController.createSubtemas);//probado
 
 // @desc Endpoint encargado de la actualización de un subtema
 // @route PUT /api/subtema/update/:id

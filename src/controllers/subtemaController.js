@@ -1,13 +1,14 @@
 import UnidadTematica from "../models/UnidadTematica.js";
 import Subtema from "../models/Subtema.js";
 import sequelize from "../database/db.js";
+import XLSX from "xlsx";
 
 /* --------- getSubtemas function -------------- */
 const getSubtemas = async (req, res, next) => {
   try {
     // Obtenemos las unidades
     const subtemas = await Subtema.findAll({
-      attributes: ["id","nombre", "descripcion"],
+      attributes: ["id", "nombre", "descripcion"],
       include: {
         model: UnidadTematica,
         attributes: ["nombre"],
@@ -185,43 +186,105 @@ const deleteSubtema = async (req, res, next) => {
 
 /* --------- createSubtemas function -------------- */
 const createSubtemas = async (req, res, next) => {
-  const { unidad_tematica_id, nombres } = req.body;
-
+  const {id} = req.params; //Id de la materia
+  console.error("ID", id)
   try {
-    // Buscar la unidad para la que se quiere crear el subtmea
-    const unidad = await UnidadTematica.findByPk(unidad_tematica_id);
-    if (!unidad) {
-      return res
-        .status(404)
-        .json({ error: "La unidad temática especificada no existe" });
+    // obtenemos el archivo excel
+    const excelFileBuffer = req.files.archivo.data;
+    // Procesamos el archivo excel y obtenemos los datos
+    const workbook = XLSX.read(excelFileBuffer, {
+      type: "buffer",
+    });
+    const workbookSheets = workbook.SheetNames;
+    const sheet = workbookSheets[0];
+    const dataExcel = XLSX.utils.sheet_to_json(workbook.Sheets[sheet]);
+
+    if (dataExcel.length === 0) {
+      res.status(400);
+      throw new Error("El archivo excel de Subtemas no puede estar vacío");
     }
-    //iteramos los subtemas
-    const subtemas = [];
-    for (const nombre of nombres) {
-      const subtemaExistente = await Subtema.findOne({
-        where: {
-          nombre: nombre.trim().toLowerCase(),
-          unidad_tematica_id: unidad_tematica_id,
-        },
+    // Verificamos que no haya duplicados en los encabezados
+    let headers = Object.keys(dataExcel[0]);
+    let headersSet = new Set(headers);
+    if (headers.length !== headersSet.size) {
+      res.status(400);
+      throw new Error("No se permite el uso de encabezados duplicados");
+    }
+    // Inicializamos la transacción
+    const result = await sequelize.transaction(async (t) => {
+      // Arreglo que contiene los datos de los subtemas nuevos
+      const newSubtemas = [];
+      // Registramos los datos de los subtemas
+      for (const itemFila of dataExcel) {
+        // Validar las cabeceras del archivo
+        if (!itemFila["unidad_tematica"] || !itemFila["subtemas"]) {
+          res.status(400);
+          throw new Error("Formato de archivo no correspondiente");
+        }
+
+        const unidadTematicaNombre = itemFila["unidad_tematica"]
+          .trim()
+          .toUpperCase();
+        const subtemas = itemFila["subtemas"]
+          .split(",")
+          .map((subtema) => subtema.trim().toLowerCase());
+
+        // Validamos que la unidad tematica exista dentro de esa materia
+        const unidadTematica = await UnidadTematica.findOne({
+          where: {
+            nombre: unidadTematicaNombre,
+            materia_id: id,
+          },
+          transaction: t,
+        });
+
+        if (!unidadTematica) {
+          res.status(400);
+          throw new Error(
+            `La unidad temática "${unidadTematicaNombre}" no existe en la materia`
+          );
+        }
+
+        const unidadTematicaId = unidadTematica.id;
+
+        // Buscar si hay subtemas iguales en la misma unidad tematica
+        for (const subtemaNombre of subtemas) {
+          const subtemaExistente = await Subtema.findOne({
+            where: {
+              nombre: subtemaNombre,
+              unidad_tematica_id: unidadTematicaId,
+            },
+            transaction: t,
+          });
+
+          if (!subtemaExistente) {
+            newSubtemas.push({
+              nombre: subtemaNombre,
+              unidad_tematica_id: unidadTematicaId,
+            });
+          }
+        }
+      }
+
+      // Registramos los subtemas nuevos
+      await Subtema.bulkCreate(newSubtemas, {
+        transaction: t,
       });
 
-      if (!subtemaExistente) {
-        subtemas.push({
-          nombre: nombre.trim().toLowerCase(),
-          unidad_tematica_id: unidad_tematica_id,
-        });
-      }
-    }
-    // Creamos el subtema
-    await Subtema.bulkCreate(subtemas);
-    // Respondemos al usuario
-    res.status(200).json({ message: "Subtemas creados exitosamente" });
-  } catch (err) {
-    const errorCreateSub = new Error(
-      `Ocurrio un problema al crear los subtemas - ${err.message}`
+      return {
+        newSubtemasL: newSubtemas.length,
+      };
+    });
+
+    res.status(200).json({
+      message: `Se han creado ${result.newSubtemasL} subtemas nuevos satisfactoriamente al sistema`,
+    });
+  } catch (error) {
+    const errorCargaSubtemas = new Error(
+      `Ocurrio un problema al intentar cargar el listado de subtemas - ${error.message}`
     );
-    errorCreateSub.stack = err.stack;
-    next(errorCreateSub);
+    errorCargaSubtemas.stack = error.stack;
+    next(errorCargaSubtemas);
   }
 };
 
@@ -231,7 +294,7 @@ const controller = {
   createSubtema,
   updateSubtema,
   deleteSubtema,
-  createSubtemas
+  createSubtemas,
 };
 
 export default controller;

@@ -458,7 +458,7 @@ const controller = {
   getMateriaById,
   createMateria,
   updateMateria,
-  unlinkUnidades,
+  unlinkUnidades,//no se va a usar en el front
   createMaterias,
   deleteMateria,
 };

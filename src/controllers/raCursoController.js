@@ -1,41 +1,39 @@
+import RaCurso from "../models/RaCurso.js";
 import UnidadTematica from "../models/UnidadTematica.js";
-import Subtema from "../models/Subtema.js";
 import Materia from "../models/Materia.js";
 import XLSX from "xlsx";
-import { tieneDuplicadosMateria } from "../util/duplicatedData.js";
 import sequelize from "../database/db.js";
-import logger from "../middlewares/logger.js";
 
-/* --------- getUnidades function -------------- */
-const getUnidades = async (req, res, next) => {
+/* --------- getRaCursos function -------------- */
+const getRaCursos = async (req, res, next) => {
   try {
-    // Obtenemos las unidades
-    const unidades = await UnidadTematica.findAll({
-      attributes: ["id", "nombre", "descripcion"],
+    // Obtenemos los ra cursos
+    const raCursos = await RaCurso.findAll({
+      attributes: ["id", "nombre", "estado"],
       include: {
         model: Materia,
         attributes: ["codigo", "nombre"],
       },
     });
     // Respondemos al usuario
-    res.status(200).json(unidades);
+    res.status(200).json(raCursos);
   } catch (err) {
-    const errorGetUni = new Error(
-      `Ocurrio un problema al obtener las unidades tematicas - ${err.message}`
+    const errorGetRaC = new Error(
+      `Ocurrio un problema al obtener los resultados de aprendizajes de curso - ${err.message}`
     );
-    errorGetUni.stack = err.stack;
-    next(errorGetUni);
+    errorGetRaC.stack = err.stack;
+    next(errorGetRaC);
   }
 };
 
-/* --------- getUnidadById function -------------- */
-const getUnidadById = async (req, res, next) => {
-  // Obtenemos el id de la unidad a obtener
+/* --------- getRaCursoById function -------------- */
+const getRaCursoById = async (req, res, next) => {
+  // Obtenemos el id del ra curso a obtener
   const { id } = req.params;
   try {
-    // Obtenemos y verificamos la unidad
-    const unidad = await UnidadTematica.findByPk(id, {
-      attributes: ["nombre", "descripcion"],
+    // Obtenemos y verificamos el ra Curso
+    const raCurso = await RaCurso.findByPk(id, {
+      attributes: ["nombre", "estado"],
       include: [
         {
           model: Materia,
@@ -43,154 +41,120 @@ const getUnidadById = async (req, res, next) => {
         },
       ],
     });
-    if (!unidad) {
+    if (!raCurso) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento acceder a una unidad no especificada`
+        `El usuario con id ${req.user.id} intento acceder a un ra curso no especificado`
       );
       return res.status(400).json({
-        error: "No se encuentra ninguna unidad tematica con el id especificado",
+        error: "No se encuentra ningun resultado de aprendizaje de curso con el id especificado",
       });
     }
     // Respondemos al usuario
     res.status(200).json(unidad);
   } catch (err) {
-    const errorGetUniId = new Error(
-      `Ocurrio un problema al obtener los datos de la unidad tematica especificada - ${err.message}`
+    const errorGetRaCId = new Error(
+      `Ocurrio un problema al obtener los datos del resultado de aprendizaje de curso especificado - ${err.message}`
     );
-    errorGetUniId.stack = err.stack;
-    next(errorGetUniId);
+    errorGetRaCId.stack = err.stack;
+    next(errorGetRaCId);
   }
 };
 
-/* --------- createUnidad function -------------- */
-const createUnidad = async (req, res) => {
-  // Obtenemos los datos de la unidad a crear
-  const { nombre, descripcion, materia_id } = req.body;
+/* --------- createRaCurso function -------------- */
+const createRaCurso = async (req, res) => {
+  // Obtenemos los datos del ra curso a crear
+  const { nombre, materia_id } = req.body;
   try {
-    // Buscar la materia para la que se quiere crear la unidad
+    // Buscar la materia para la que se quiere crear el ra curso
     const materia = await Materia.findByPk(materia_id);
     if (!materia) {
       return res
         .status(404)
         .json({ error: "La materia especificada no existe" });
     }
-    // Verificar si la unidad temática ya está asociada a la materia
-    const unidadExistente = await UnidadTematica.findOne({
+    // Verificar si el ra curso ya está asociada a la materia
+    const raCursoExistente = await RaCurso.findOne({
       where: {
         nombre,
         materia_id: materia_id,
       },
     });
 
-    if (unidadExistente) {
+    if (raCursoExistente) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento crear una unidad tematica ya registrada en la materia`
+        `El usuario con id ${req.user.id} intento crear un ra curso ya registrado en la materia`
       );
       return res.status(400).json({
-        error: `La unidad tematica ${nombre} ya se encuentra registrada en esta materia`,
+        error: `El ra curso ${nombre} ya se encuentra registrado en esta materia`,
       });
     }
-    // Creamos la unidad
-    await UnidadTematica.create({
-      nombre: nombre.toUpperCase(),
-      descripcion,
+    // Creamos el ra curso
+    await RaCurso.create({
+      nombre: nombre.toLowerCase(),
       materia_id,
     });
     // Respondemos al usuario
-    res.status(200).json({ message: "Unidad tematica creada exitosamente" });
+    res.status(200).json({ message: "Resultado de aprendizaje de curso creado exitosamente" });
   } catch (err) {
-    const errorCreateUni = new Error(
-      `Ocurrio un problema al crear la unidad tematica - ${err.message}`
+    const errorCreateRac = new Error(
+      `Ocurrio un problema al crear el resultado de aprendizaje de curso - ${err.message}`
     );
-    errorCreateUni.stack = err.stack;
-    next(errorCreateUni);
+    errorCreateRac.stack = err.stack;
+    next(errorCreateRac);
   }
 };
 
-/* --------- updateUnidad function -------------- */
-const updateUnidad = async (req, res, next) => {
-  // Obtenemos el id de la unidad a actualizar
+/* --------- updateRaCurso function -------------- */
+const updateRaCurso = async (req, res, next) => {
+  // Obtenemos el id del ra curso a actualizar
   const { id } = req.params;
   // Obtenemos los datos a actualizar
-  const { nombre, descripcion, materia_id } = req.body;
+  const { nombre, estado, materia_id } = req.body;
   try {
-    // Hacemos las verificaciones de la unidad en paralelo
-    const [unidad, uniFound] = await Promise.all([
-      UnidadTematica.findByPk(id),
-      UnidadTematica.findOne({
+    // Hacemos las verificaciones del ra curso en paralelo
+    const [raCurso, raCursoFound] = await Promise.all([
+      RaCurso.findByPk(id),
+      RaCurso.findOne({
         where: {
           nombre,
           materia_id: materia_id,
         },
       }),
     ]);
-    // verificamos la unidad
-    if (!unidad) {
+    // verificamos el ra Curso
+    if (!raCurso) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento acceder a una unidad tematica inexistente.`
+        `El usuario con id ${req.user.id} intento acceder a un ra curso inexistente.`
       );
       return res.status(400).json({
-        error: "No se encuentra ninguna unidad tematica con el id especificado",
+        error: "No se encuentra ningun resultado de aprendizaje de curso con el id especificado",
       });
     }
     // Comprobamos que el nombre sea unico
-    if (uniFound && unidad.nombre !== uniFound.nombre) {
+    if (raCursoFound && raCurso.nombre !== raCursoFound.nombre) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento usar un nombre de unidad tematica ya registrado en la materia`
+        `El usuario con id ${req.user.id} intento usar un nombre de resultado de aprendizaje de curso ya registrado en la materia`
       );
       return res.status(400).json({
-        error: `El nombre de la unidad tematica ${nombre} ya se encuentra registrado en la materia`,
+        error: `El nombre del resultado de aprendizaje de curso ${nombre} ya se encuentra registrado en la materia`,
       });
     }
-    // Actualizamos la unidad
-    await unidad.update({
-      nombre: nombre.toUpperCase(),
-      descripcion,
+    // Actualizamos el ra curso
+    await raCurso.update({
+      nombre: nombre.toLowerCase(),
+      estado,
       materia_id,
     });
     // Respondemos al usuario
     res
       .status(200)
-      .json({ message: "Unidad Tematica actualizada correctamente" });
+      .json({ message: "resultado de aprendizaje de curso actualizado correctamente" });
   } catch (err) {
-    const errorUpdateUnidad = new Error(
-      `Ocurrio un problema al actualizar la unidad tematica - ${err.message}`
+    const errorUpdateRaC = new Error(
+      `Ocurrio un problema al actualizar el resultado de aprendizaje de curso - ${err.message}`
     );
-    errorUpdateUnidad.stack = err.stack;
-    next(errorUpdateUnidad);
-  }
-};
-
-/* --------- removeSubtema function -------------- */
-const unlinkSubtema = async (req, res, next) => {
-  // Obtenemos el identificador del subtema
-  const { id } = req.params;
-  try {
-    // Obtenemos el subtema a desasociar
-    const subtema = await Subtema.findByPk(id, {
-      include: [UnidadTematica],
-    });
-    // verificamos el subtema
-    if (!subtema) {
-      req.log.warn(
-        `El usuario con id ${req.user.id} intento desvincular un subtema  inexsistente o no asociada a la unidad tematica especificada.`
-      );
-      return res.status(400).json({
-        error: "No se encuentra ningun subtema con el id especificado",
-      });
-    }
-    // Desvinculamos el subtema de su unidad tematica
-    await subtema.setUnidades_Tematica(null);
-    // Respondemos al usuario
-    res.status(200).json({
-      message: `Subtema ${subtema.nombre} desvinculado exitosamente`,
-    });
-  } catch (err) {
-    const errorUnlinkSub = new Error(
-      `Ocurrio un problema al desvincular la unidad tematica de su materia - ${err.message}`
-    );
-    errorUnlinkSub.stack = err.stack;
-    next(errorUnlinkSub);
+    errorUpdateRaC.stack = err.stack;
+    next(errorUpdateRaC);
   }
 };
 
@@ -302,52 +266,49 @@ const createUnidades = async (req, res, next) => {
     next(errorCargaUnidades);
   }
 };
-/* --------- deleteUnidad function -------------- */
-const deleteUnidad = async (req, res, next) => {
-  // Obtenemos el identificador de la unidad
+/* --------- deleteRaCurso function -------------- */
+const deleteRaCurso = async (req, res, next) => {
+  // Obtenemos el identificador del ra curso
   const { id } = req.params;
-
   try {
-    // Verificamos la existencia de la unidad
-    const unidad = await UnidadTematica.findByPk(id, { include: Subtema });
-
-    if (!unidad) {
+    // Verificamos la existencia del ra curso
+    const raCurso = await RaCurso.findByPk(id);
+    if (!raCurso) {
       req.log.warn(
-        "Intento de desvinculación de una unidad tematica inexistente"
+        "Intento de desvinculación de un ra curso inexistente"
       );
       return res
         .status(400)
-        .json({ error: "No se encontro la unidad tematica especificada" });
+        .json({ error: "No se encontro el resultado de aprendizaje de curso especificado" });
     }
-    // Buscar y eliminar todos los subtemas asociados a la unidad temática
+    // Buscar y eliminar todos los tipos de evidencia asociados al ra curso especificado
     await Promise.all(
-      unidad.Subtemas.map(async (subtema) => {
-        await subtema.destroy();
+      raCurso.TipoEvidencias.map(async (tipoEvidencia) => {
+        await tipoEvidencia.destroy();
       })
     );
-    // Eliminar la unidad temática
-    await unidad.destroy();
+    // Eliminar el ra curso
+    await raCurso.destroy();
     res.status(200).json({
       message:
-        "La unidad tematica ha sido desvinculada de la plataforma correctamente",
+        "El resultado de aprendizaje de curso ha sido desvinculado de la plataforma correctamente",
     });
   } catch (error) {
-    const errorDelUni = new Error(
-      `Ocurrio un problema al intentar desvincular la unidad tematica - ${error.message}`
+    const errorDelRaC = new Error(
+      `Ocurrio un problema al intentar desvincular el resultado de aprendizaje de curso - ${error.message}`
     );
-    errorDelUni.stack = error.stack;
-    next(errorDelUni);
+    errorDelRaC.stack = error.stack;
+    next(errorDelRaC);
   }
 };
 
 const controller = {
-  getUnidades,
-  getUnidadById,
-  createUnidad,
-  updateUnidad,
-  unlinkSubtema, //no se va a usar en el front
+  getRaCursos,
+  getRaCursoById,
+  createRaCurso,
+  updateRaCurso,
   createUnidades,
-  deleteUnidad,
+  deleteRaCurso,
 };
 
 export default controller;
