@@ -46,7 +46,8 @@ const getRaCursoById = async (req, res, next) => {
         `El usuario con id ${req.user.id} intento acceder a un ra curso no especificado`
       );
       return res.status(400).json({
-        error: "No se encuentra ningun resultado de aprendizaje de curso con el id especificado",
+        error:
+          "No se encuentra ningun resultado de aprendizaje de curso con el id especificado",
       });
     }
     // Respondemos al usuario
@@ -94,7 +95,11 @@ const createRaCurso = async (req, res) => {
       materia_id,
     });
     // Respondemos al usuario
-    res.status(200).json({ message: "Resultado de aprendizaje de curso creado exitosamente" });
+    res
+      .status(200)
+      .json({
+        message: "Resultado de aprendizaje de curso creado exitosamente",
+      });
   } catch (err) {
     const errorCreateRac = new Error(
       `Ocurrio un problema al crear el resultado de aprendizaje de curso - ${err.message}`
@@ -127,7 +132,8 @@ const updateRaCurso = async (req, res, next) => {
         `El usuario con id ${req.user.id} intento acceder a un ra curso inexistente.`
       );
       return res.status(400).json({
-        error: "No se encuentra ningun resultado de aprendizaje de curso con el id especificado",
+        error:
+          "No se encuentra ningun resultado de aprendizaje de curso con el id especificado",
       });
     }
     // Comprobamos que el nombre sea unico
@@ -148,7 +154,9 @@ const updateRaCurso = async (req, res, next) => {
     // Respondemos al usuario
     res
       .status(200)
-      .json({ message: "resultado de aprendizaje de curso actualizado correctamente" });
+      .json({
+        message: "resultado de aprendizaje de curso actualizado correctamente",
+      });
   } catch (err) {
     const errorUpdateRaC = new Error(
       `Ocurrio un problema al actualizar el resultado de aprendizaje de curso - ${err.message}`
@@ -174,7 +182,7 @@ const createUnidades = async (req, res, next) => {
     if (dataExcel.length === 0) {
       res.status(400);
       throw new Error(
-        "El archivo excel de unidades tematicas no puede estar vacio"
+        "El archivo excel de resultados de aprendizaje de curso no puede estar vacio"
       );
     }
     // Verificamos que no haya duplicados en los encabezados
@@ -184,21 +192,18 @@ const createUnidades = async (req, res, next) => {
       res.status(400);
       throw new Error("No se permite el uso de encabezados duplicados");
     }
-    // Verificamos que no haya duplicados en el conjunto de unidades cargadas
-    // if (tieneDuplicadosMateria(dataExcel)) {
-    //   res.status(400);
-    //   throw new Error("No se permiten materias con codigos repetidos");
-    // }
-    // Obtenemos todos los docentes existentes
 
     //Inicializamos la transacción
     const result = await sequelize.transaction(async (t) => {
-      // Arreglo que contiene los datos de las unidades tematicas nuevas
-      const newUnidadesTematicas = [];
-      // Registramos los datos de las unidades tematicas
+      // Arreglo que contiene los datos de los ra curso nuevos
+      const newRaCursos = [];
+      // Registramos los datos de los ra curso
       for (const itemFila of dataExcel) {
         // Validar las cabeceras del archivo
-        if (!itemFila["codigo_materia"] || !itemFila["unidades_tematicas"]) {
+        if (
+          !itemFila["codigo_materia"] ||
+          !itemFila["resultados_aprendizaje_curso"]
+        ) {
           res.status(400);
           throw new Error("Formato de archivo no correspondiente");
         }
@@ -225,45 +230,45 @@ const createUnidades = async (req, res, next) => {
         }
         // Obtener el id de la materia encontrada
         const materiaId = materia.id;
-        const unidadesTematicas = itemFila["unidades_tematicas"]
-          .split(",")
-          .map((unidad) => unidad.trim().toUpperCase());
+        const raCursos = itemFila["resultados_aprendizaje_curso"]
+          .split("||")
+          .map((raCurso) => raCurso.trim().toLowerCase());
         // Buscar si hay unidades temáticas iguales en la misma materia
-        for (const unidad of unidadesTematicas) {
-          const unidadExistente = await UnidadTematica.findOne({
+        for (const raCurso of raCursos) {
+          const raCursoExistente = await RaCurso.findOne({
             where: {
-              nombre: unidad,
+              nombre: raCurso,
               materia_id: materiaId,
             },
           });
 
-          if (!unidadExistente) {
-            newUnidadesTematicas.push({
-              nombre: unidad,
+          if (!raCursoExistente) {
+            newRaCursos.push({
+              nombre: raCurso,
               materia_id: materiaId,
             });
           }
         }
       }
-      // Registramos las unidades tematicas nuevas
-      await UnidadTematica.bulkCreate(newUnidadesTematicas, {
+      // Registramos los ra curso nuevos
+      await RaCurso.bulkCreate(newRaCursos, {
         transaction: t,
       });
 
       return {
-        newUnidadesL: newUnidadesTematicas.length,
+        newRaCursoL: newRaCursos.length,
       };
     });
 
     res.status(200).json({
-      message: `Se han creado ${result.newUnidadesL} unidades tematicas nuevas satisfactoriamente al sistema`,
+      message: `Se han creado ${result.newRaCursoL} resultados de aprendizaje de curso nuevos satisfactoriamente al sistema`,
     });
   } catch (error) {
-    const errorCargaUnidades = new Error(
-      `Ocurrio un problema al intentar cargar el listado de unidades tematicas - ${error.message}`
+    const errorCargaRaCurso = new Error(
+      `Ocurrio un problema al intentar cargar el listado de resultado de aprendizaje de curso - ${error.message}`
     );
-    errorCargaUnidades.stack = error.stack;
-    next(errorCargaUnidades);
+    errorCargaRaCurso.stack = error.stack;
+    next(errorCargaRaCurso);
   }
 };
 /* --------- deleteRaCurso function -------------- */
@@ -274,12 +279,13 @@ const deleteRaCurso = async (req, res, next) => {
     // Verificamos la existencia del ra curso
     const raCurso = await RaCurso.findByPk(id);
     if (!raCurso) {
-      req.log.warn(
-        "Intento de desvinculación de un ra curso inexistente"
-      );
+      req.log.warn("Intento de desvinculación de un ra curso inexistente");
       return res
         .status(400)
-        .json({ error: "No se encontro el resultado de aprendizaje de curso especificado" });
+        .json({
+          error:
+            "No se encontro el resultado de aprendizaje de curso especificado",
+        });
     }
     // Buscar y eliminar todos los tipos de evidencia asociados al ra curso especificado
     await Promise.all(
