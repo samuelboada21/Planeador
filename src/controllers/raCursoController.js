@@ -1,6 +1,6 @@
 import RaCurso from "../models/RaCurso.js";
-import UnidadTematica from "../models/UnidadTematica.js";
 import Materia from "../models/Materia.js";
+import TipoEvidencia from "../models/TipoEvidencia.js";
 import XLSX from "xlsx";
 import sequelize from "../database/db.js";
 
@@ -51,7 +51,7 @@ const getRaCursoById = async (req, res, next) => {
       });
     }
     // Respondemos al usuario
-    res.status(200).json(unidad);
+    res.status(200).json(raCurso);
   } catch (err) {
     const errorGetRaCId = new Error(
       `Ocurrio un problema al obtener los datos del resultado de aprendizaje de curso especificado - ${err.message}`
@@ -166,8 +166,8 @@ const updateRaCurso = async (req, res, next) => {
   }
 };
 
-/* --------- createUnidades function -------------- */
-const createUnidades = async (req, res, next) => {
+/* --------- createRaCurso function -------------- */
+const createRaCursos = async (req, res, next) => {
   try {
     //obtenemos el archivo excel
     const excelFileBuffer = req.files.archivo.data;
@@ -288,11 +288,8 @@ const deleteRaCurso = async (req, res, next) => {
         });
     }
     // Buscar y eliminar todos los tipos de evidencia asociados al ra curso especificado
-    await Promise.all(
-      raCurso.TipoEvidencias.map(async (tipoEvidencia) => {
-        await tipoEvidencia.destroy();
-      })
-    );
+    await TipoEvidencia.destroy({ where: { ra_curso_id: raCurso.id } });
+
     // Eliminar el ra curso
     await raCurso.destroy();
     res.status(200).json({
@@ -313,7 +310,7 @@ const controller = {
   getRaCursoById,
   createRaCurso,
   updateRaCurso,
-  createUnidades,
+  createRaCursos,
   deleteRaCurso,
 };
 

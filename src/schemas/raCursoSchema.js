@@ -1,7 +1,7 @@
 import z from "zod";
 import validateData from "../util/validateData.js";
 
-// Esquema para unidad tematica
+// Esquema para ra curso
 const raCursoSchema = z
   .object({
     body: z
@@ -9,21 +9,21 @@ const raCursoSchema = z
         nombre: z
           .string({
             invalid_type_error:
-              "El nombre del resultado de aprendizaje del curso solo puede ser texto",
+              "El resultado de aprendizaje del curso solo puede ser texto",
             required_error:
-              "El nombre del resultado de aprendizaje del curso es requerido",
+              "El resultado de aprendizaje del curso es requerido",
           })
           .min(5, {
             message:
-              "El nombre del resultado de aprendizaje del curso es muy corto",
+              "El resultado de aprendizaje del curso es muy corto",
           })
-          .max(250, {
+          .max(500, {
             message:
-              "El nombre del resultado de aprendizaje del curso supera la cant. de caracteres permitida",
+              "El resultado de aprendizaje del curso supera la cant. de caracteres permitida",
           }),
         estado: z.boolean({
           invalid_type_error:
-            "El estado el resultado de aprendizaje del curso solo puede ser un valor booleano",
+            "El estado del resultado de aprendizaje del curso solo puede ser un valor booleano",
           required_error: "El estado del resultado de aprendizaje del curso es requerido",
         }),
         materia_id: z.number({

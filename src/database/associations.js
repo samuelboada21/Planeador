@@ -9,6 +9,7 @@ import UnidadTematica from "../models/UnidadTematica.js";
 import Subtema from "../models/Subtema.js";
 import MateriaCompetencia from "../models/MateriaCompetencia.js";
 import RaCurso from "../models/RaCurso.js";
+import TipoEvidencia from "../models/TipoEvidencia.js";
 
 // Definimos la relación Usuario - PasswordReset
 User.hasOne(PasswordReset, { foreignKey: "usuario_id", onDelete: "RESTRICT" });
@@ -68,3 +69,7 @@ Competencia.belongsToMany(Materia, {
 // Definimos la relación Materia - Ra Curso
 Materia.hasMany(RaCurso, { foreignKey: "materia_id", onDelete: "RESTRICT" });
 RaCurso.belongsTo(Materia, { foreignKey: "materia_id" });
+
+// Definimos la relación Materia - Ra Curso
+RaCurso.hasMany(TipoEvidencia, { foreignKey: "ra_curso_id", onDelete: "RESTRICT" });
+TipoEvidencia.belongsTo(RaCurso, { foreignKey: "ra_curso_id" });

@@ -2,8 +2,8 @@ import { DataTypes } from "sequelize";
 //Importamos el objeto de conexión
 import sequelize from "../database/db.js";
 // Creamos el esquema del modelo
-const RaCurso = sequelize.define(
-  "Ra_Cursos",
+const TipoEvidencia = sequelize.define(
+  "Tipo_Evidencias",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -11,24 +11,19 @@ const RaCurso = sequelize.define(
       autoIncrement: true,
     },
     nombre: {
-      type: DataTypes.STRING(500),
+      type: DataTypes.STRING,
       allowNull: false,
       validate: {
         notEmpty: {
-          msg: "El resultado de aprendizaje del curso no puede ser vacio",
+          msg: "El tipo de evidencia no puede ser vacio",
         },
       },
     },
-    estado: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: true,
-      },
-    materia_id: {
+    ra_curso_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "Materias",
+        model: "Ra_Cursos",
         key: "id",
       },
     },
@@ -41,4 +36,4 @@ const RaCurso = sequelize.define(
   }
 );
 // Exportamos el modelo
-export default RaCurso;
+export default TipoEvidencia;

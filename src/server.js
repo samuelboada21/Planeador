@@ -25,6 +25,8 @@ import resultadoRoutes from './routes/resultado.routes.js';
 import materiaRoutes from './routes/materia.routes.js';
 import unidadRoutes from './routes/unidad.routes.js';
 import subtemaRoutes from './routes/subtema.routes.js';
+import raCursoRoutes from './routes/raCurso.routes.js';
+import tipoEvidenciaRoutes from './routes/tipoEvidencia.routes.js';
 
 // Cargar las variables de entorno desde el archivo .env
 dotenv.config();
@@ -86,6 +88,8 @@ app.use('/api/ra',resultadoRoutes);
 app.use('/api/materia', materiaRoutes);
 app.use('/api/unidad', unidadRoutes);
 app.use('/api/subtema', subtemaRoutes);
+app.use('/api/raCurso',raCursoRoutes);
+app.use('/api/tipoEvidencia',tipoEvidenciaRoutes);
 
 // En caso de acceder a una ruta no especificada
 app.all('*', (req, res) => {
