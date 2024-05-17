@@ -6,7 +6,7 @@ import Materia from "../models/Materia.js";
 import XLSX from "xlsx";
 import { tieneDuplicadosMateria } from "../util/duplicatedData.js";
 import sequelize from "../database/db.js";
-import { asignCompetences } from "../util/createdJoins.js";
+import { asignCompetences, asignCompetencesUpdate } from "../util/createdJoins.js";
 import logger from "../middlewares/logger.js";
 
 /* --------- getMaterias function -------------- */
@@ -188,15 +188,8 @@ const updateMateria = async (req, res, next) => {
         },
         { transaction: t }
       );
-
-      // Eliminamos todas las asociaciones de competencias actuales
-      await MateriaCompetencia.destroy(
-        { where: { materia_id: id } },
-        { transaction: t }
-      );
-
       // Asignamos las nuevas competencias
-      await asignCompetences(id, competencias, t, res);
+      await asignCompetencesUpdate(id, competencias, t, res);
     });
 
     // Respondemos al usuario

@@ -47,10 +47,10 @@ export const tieneDuplicadosMateria = (materias) => {
 export const tieneDuplicadosInstrumento = (instrumentos) => {
     let nombres = {};
     for (let instrumento of instrumentos) {
-        if (nombres[instrumento.nombre]) {
+        if (nombres[instrumento.instrumento]) {
             return true;
         } else {
-            nombres[instrumento.nombre] = true;
+            nombres[instrumento.instrumento] = true;
         }
     }
     return false;

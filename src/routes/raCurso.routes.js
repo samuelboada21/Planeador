@@ -32,7 +32,7 @@ router.get('/:id', [extractToken, authJWT, isAdmin, validateRaCursoData], raCurs
 // @access solo Admin
 router.post('/create', [extractToken, authJWT, isAdmin, validateRaCursoData], raCursoController.createRaCurso);//probado
 
-// @desc Endpoint encargado de la carga de excel con el lsitado de ra cursos
+// @desc Endpoint encargado de la carga de excel con el listado de ra cursos
 // @route POST /api/raCurso/createRaCursos
 // @access solo Admin
 router.post('/createRaCursos', [extractToken, authJWT, isAdmin, fileupload(), filePayloadExist, fileExcelLimiter('.xlsx'), fileSizeLimiter], raCursoController.createRaCursos);//probado
