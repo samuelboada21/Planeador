@@ -27,3 +27,8 @@ export const asignCompetences = async (materiaId, competencias, t, res) => {
 
     }
 }
+
+export const asignTipoEvidencias = async (instrumentoId, tipos, t, res) => {
+
+    
+}

@@ -1,251 +1,194 @@
-import UnidadTematica from "../models/UnidadTematica.js";
-import Subtema from "../models/Subtema.js";
-import Competencia from "../models/Competencia.js";
-import MateriaCompetencia from "../models/MateriaCompetencia.js";
-import Materia from "../models/Materia.js";
+import TipoEvidencia from "../models/TipoEvidencia.js";
+import TipoInstrumento from "../models/TipoInstrumento.js";
+import Instrumento from "../models/InstrumentoEvaluacion.js";
 import XLSX from "xlsx";
 import { tieneDuplicadosMateria } from "../util/duplicatedData.js";
 import sequelize from "../database/db.js";
-import { asignCompetences } from "../util/createdJoins.js";
-import logger from "../middlewares/logger.js";
+import { asignTipoEvidencias } from "../util/createdJoins.js";
 
-/* --------- getMaterias function -------------- */
-const getMaterias = async (req, res, next) => {
-  // Estado
-  const state = req.query.estado || true;
+/* --------- getInstrumentos function -------------- */
+const getInstrumentos = async (req, res, next) => {
+ 
   try {
-    // Obtenemos las materias
-    const materias = await Materia.findAll({
-      where: {
-        estado: state,
-      },
+    // Obtenemos los instrumentos
+    const instrumentos = await Instrumento.findAll({
       attributes: [
         "id",
         "codigo",
         "nombre",
-        "tipo",
-        "creditos",
-        "semestre",
-        "estado",
+        "descripcion"
       ],
       include: {
-        model: Competencia,
+        model: TipoEvidencia,
         attributes: ["nombre"],
       },
     });
     // Respondemos al usuario
-    res.status(200).json(materias);
+    res.status(200).json(instrumentos);
   } catch (err) {
-    const errorGetMat = new Error(
-      `Ocurrio un problema al obtener las materias - ${err.message}`
+    const errorGetIns = new Error(
+      `Ocurrio un problema al obtener los instrumentos de evaluacion - ${err.message}`
     );
-    errorGetMat.stack = err.stack;
-    next(errorGetMat);
+    errorGetIns.stack = err.stack;
+    next(errorGetIns);
   }
 };
 
-/* --------- getMateriaById function -------------- */
-const getMateriaById = async (req, res, next) => {
-  // Obtenemos el id de la materia a obtener
+/* --------- getInstrumentoById function -------------- */
+const getInstrumentoById = async (req, res, next) => {
+  // Obtenemos el id del instrumento a obtener
   const { id } = req.params;
   try {
-    // Obtenemos y verificamos la materia
-    const materia = await Materia.findByPk(id, {
+    // Obtenemos y verificamos el isntrumento
+    const instrumento = await Instrumento.findByPk(id, {
       attributes: [
         "codigo",
         "nombre",
-        "tipo",
-        "creditos",
-        "semestre",
-        "estado",
+        "descripcion",
       ],
-      include: [
+      include:
         {
-          model: Competencia,
+          model: TipoEvidencia,
           attributes: ["nombre"],
         },
-        {
-          model: UnidadTematica,
-          attributes: ["nombre"],
-        },
-      ],
     });
-    if (!materia) {
+    if (!instrumento) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento acceder a una materia no especificada`
+        `El usuario con id ${req.user.id} intento acceder a un instrumento no especificado`
       );
       return res.status(400).json({
-        error: "No se encuentra ninguna materia con el id especificado",
+        error: "No se encuentra ningun instrumento de evaluacion con el id especificado",
       });
     }
     // Respondemos al usuario
-    res.status(200).json(materia);
+    res.status(200).json(instrumento);
   } catch (err) {
-    const errorGetMatId = new Error(
-      `Ocurrio un problema al obtener los datos de la materia especificada - ${err.message}`
+    const errorGetInsId = new Error(
+      `Ocurrio un problema al obtener los datos del instrumento especificado - ${err.message}`
     );
-    errorGetMatId.stack = err.stack;
-    next(errorGetMatId);
+    errorGetInsId.stack = err.stack;
+    next(errorGetInsId);
   }
 };
 
-/* --------- createMateria function -------------- */
-const createMateria = async (req, res) => {
-  // Obtenemos los datos de la materia a crear
-  const { codigo, nombre, tipo, creditos, semestre, competencias } = req.body;
+/* --------- createInstrumento function -------------- */
+const createInstrumento = async (req, res) => {
+  // Obtenemos los datos del instrumento a crear
+  const { codigo, nombre, descripcion, tipos } = req.body;
   let result;
   try {
-    // Comprobamos que el codigo sea unico
-    const matFound = await Materia.findOne({
+    // Comprobamos que el nombre sea unico
+    const insFound = await Instrumento.findOne({
       where: {
-        codigo,
+        nombre,
       },
     });
-    if (matFound) {
+    if (insFound) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento crear una materia ya registrada`
+        `El usuario con id ${req.user.id} intento crear un instrumento ya registrado`
       );
       return res.status(400).json({
-        error: `El codigo de la materia ${codigo} ya se encuentra registrado`,
+        error: `El instrumento ${nombre} ya se encuentra registrado`,
       });
     }
     // Iniciamos la transacción
     result = await sequelize.transaction(async (t) => {
-      //creamos la materia
-      const materia = await Materia.create(
+      //creamos el instrumento
+      const instrumento = await Instrumento.create(
         {
           codigo,
-          nombre: nombre.toUpperCase(),
-          tipo,
-          creditos,
-          semestre,
+          nombre: nombre.toLowerCase(),
+          descripcion
         },
         { transaction: t }
       );
 
-      //asignamos las competencias
-      await asignCompetences(materia.id, competencias, t, res);
-      return materia;
+      //asignamos los tipos de evidencia asociados
+      await asignTipoEvidencias(instrumento.id, tipos, t, res);
+      return instrumento;
     });
     // Respondemos al usuario
-    res.status(200).json({ message: "Materia creada exitosamente" });
+    res.status(200).json({ message: "Instrumento creado exitosamente" });
   } catch (err) {
-    const errorCreateMat = new Error(
-      `Ocurrio un problema al crear la materia - ${err.message}`
+    const errorCreateIns = new Error(
+      `Ocurrio un problema al crear el instrumento - ${err.message}`
     );
-    errorCreateMat.stack = err.stack;
-    next(errorCreateMat);
+    errorCreateIns.stack = err.stack;
+    next(errorCreateIns);
   }
 };
 
-/* --------- updateMateria function -------------- */
-const updateMateria = async (req, res, next) => {
-  // Obtenemos el id de la materia a actualizar
+/* --------- updateInstrumento function -------------- */
+const updateInstrumento = async (req, res, next) => {
+  // Obtenemos el id del instrumento a actualizar
   const { id } = req.params;
   // Obtenemos los datos a actualizar
-  const { codigo, nombre, tipo, creditos, semestre, estado, competencias } =
+  const { codigo, nombre, descripcion, tipos } =
     req.body;
   try {
-    // Hacemos las verificaciones de la materia en paralelo
-    const [materia, matFound] = await Promise.all([
-      Materia.findByPk(id),
-      Materia.findOne({
+    // Hacemos las verificaciones del instrumento en paralelo
+    const [instrumento, insFound] = await Promise.all([
+      Instrumento.findByPk(id),
+      Instrumento.findOne({
         where: {
-          codigo,
+          nombre,
         },
       }),
     ]);
     // verificamos la materia
-    if (!materia) {
+    if (!instrumento) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento acceder a una materia inexistente.`
+        `El usuario con id ${req.user.id} intento acceder a un instrumento inexistente.`
       );
       return res.status(400).json({
-        error: "No se encuentra ninguna materia con el id especificado",
+        error: "No se encuentra ningun instrumento de evaluacion con el id especificado",
       });
     }
-    // Comprobamos que el codigo sea unico
-    if (matFound && materia.codigo !== matFound.codigo) {
+    // Comprobamos que el nombre sea unico
+    if (insFound && instrumento.nombre !== insFound.nombre) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento usar un codigo de materia ya registrado`
+        `El usuario con id ${req.user.id} intento usar un nombre de instrumento ya registrado`
       );
       return res.status(400).json({
-        error: `El codigo de materia ${codigo} ya se encuentra registrado`,
+        error: `El instrumento ${nombre} ya se encuentra registrado`,
       });
     }
 
     // Iniciamos la transacción
     await sequelize.transaction(async (t) => {
       // Actualizamos los datos de la materia
-      await materia.update(
+      await instrumento.update(
         {
           codigo,
-          nombre: nombre.toUpperCase(),
-          tipo,
-          creditos,
-          semestre,
-          estado,
+          nombre: nombre.toLowerCase(),
+          descripcion,
         },
         { transaction: t }
       );
 
-      // Eliminamos todas las asociaciones de competencias actuales
-      await MateriaCompetencia.destroy(
-        { where: { materia_id: id } },
+      // Eliminamos todas las asociaciones de tipos de evidencia actuales
+      await TipoInstrumento.destroy(
+        { where: { tipo_id: id } },
         { transaction: t }
       );
 
-      // Asignamos las nuevas competencias
-      await asignCompetences(id, competencias, t, res);
+      // Asignamos los nuevos tipos de evidencias
+      await asignTipoEvidencias(id, tipos, t, res);
     });
 
     // Respondemos al usuario
-    res.status(200).json({ message: "Materia actualizada correctamente" });
+    res.status(200).json({ message: "Instrumento de evaluacion actualizado correctamente" });
   } catch (err) {
-    const errorUpdateMateria = new Error(
-      `Ocurrio un problema al actualizar la materia - ${err.message}`
+    const errorUpdateIns = new Error(
+      `Ocurrio un problema al actualizar el instrumento de evaluacion - ${err.message}`
     );
-    errorUpdateMateria.stack = err.stack;
-    next(errorUpdateMateria);
-  }
-};
-
-/* --------- removeUnidades function -------------- */
-const unlinkUnidades = async (req, res, next) => {
-  // Obtenemos el identificador de la unidad
-  const { id } = req.params;
-  try {
-    console.log(id);
-    // Obtenemos la unidad a desasociar
-    const unidad = await UnidadTematica.findByPk(id, {
-      include: [Materia],
-    });
-    // verificamos la unidad
-    if (!unidad) {
-      req.log.warn(
-        `El usuario con id ${req.user.id} intento desvincular una unidad tematica inexsistente o no asociada a la materia especificada.`
-      );
-      return res.status(400).json({
-        error: "No se encuentra ninguna unidad tematica con el id especificado",
-      });
-    }
-    // Desvinculamos la unidad de su materia
-    await unidad.setMateria(null);
-    // Respondemos al usuario
-    res.status(200).json({
-      message: `Unidad tematica ${unidad.nombre} desvinculada exitosamente`,
-    });
-  } catch (err) {
-    const errorUnlinkUni = new Error(
-      `Ocurrio un problema al desvincular la unidad tematica de su materia - ${err.message}`
-    );
-    errorUnlinkUni.stack = err.stack;
-    next(errorUnlinkUni);
+    errorUpdateIns.stack = err.stack;
+    next(errorUpdateIns);
   }
 };
 
 /* --------- createMaterias function -------------- */
-const createMaterias = async (req, res, next) => {
+const createInstrumentos = async (req, res, next) => {
   try {
     //obtenemos el archivo excel
     const excelFileBuffer = req.files.archivo.data;
@@ -414,53 +357,43 @@ const createMaterias = async (req, res, next) => {
     next(errorCargaMateria);
   }
 };
-/* --------- deleteMateria function -------------- */
-const deleteMateria = async (req, res, next) => {
-  // Obtenemos el identificador de la materia
+
+/* --------- deleteInstrumento function -------------- */
+const deleteInstrumento = async (req, res, next) => {
+  // Obtenemos el identificador del instrumento
   const { id } = req.params;
 
   try {
-    // Verificamos la existencia de la materia
-    const materia = await Materia.findByPk(id, {
-      include: [{ model: UnidadTematica, include: Subtema }],
-    });
-    if (!materia) {
-      req.log.warn("Intento de desvinculación de una materia inexistente");
+    // Verificamos la existencia del instrumento
+    const instrumento = await Instrumento.findByPk(id);
+    if (!instrumento) {
+      req.log.warn("Intento de desvinculación de un instrumento inexistente");
       return res
         .status(400)
-        .json({ error: "No se encontró la materia especificada" });
+        .json({ error: "No se encontro el instrumento de evaluacion especificado" });
     }
-    // Eliminar todos los subtemas asociados a las unidades temáticas de la materia
-    await Promise.all(
-      materia.Unidades_Tematicas.map(async (unidad) => {
-        await Subtema.destroy({ where: { unidad_tematica_id: unidad.id } });
-      })
-    );
-    // Eliminar todas las unidades temáticas asociadas a la materia
-    await UnidadTematica.destroy({ where: { materia_id: materia.id } });
-    // Eliminar la materia misma
-    await materia.destroy();
+    // Eliminar el instrumento de evaluacion
+    await instrumento.destroy();
     // Respondemos al usuario
     res.status(200).json({
-      message: "La materia ha sido desvinculada de la plataforma correctamente",
+      message: "El instrumento ha sido desvinculado de la plataforma correctamente",
     });
   } catch (error) {
-    const errorDelMat = new Error(
-      `Ocurrió un problema al intentar desvincular la materia - ${error.message}`
+    const errorDelIns = new Error(
+      `Ocurrió un problema al intentar desvincular el instrumento de evaluacion - ${error.message}`
     );
-    errorDelMat.stack = error.stack;
-    next(errorDelMat);
+    errorDelIns.stack = error.stack;
+    next(errorDelIns);
   }
 };
 
 const controller = {
-  getMaterias,
-  getMateriaById,
-  createMateria,
-  updateMateria,
-  unlinkUnidades,//no se va a usar en el front
-  createMaterias,
-  deleteMateria,
+  getInstrumentos,
+  getInstrumentoById,
+  createInstrumento,
+  updateInstrumento,
+  createInstrumentos,
+  deleteInstrumento,
 };
 
 export default controller;

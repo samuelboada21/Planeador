@@ -6,9 +6,14 @@ import sequelize from "../database/db.js";
 
 /* --------- getRaCursos function -------------- */
 const getRaCursos = async (req, res, next) => {
+  // Estado
+  const state = req.query.estado || true;
   try {
     // Obtenemos los ra cursos
     const raCursos = await RaCurso.findAll({
+      where: {
+        estado: state,
+      },
       attributes: ["id", "nombre", "estado"],
       include: {
         model: Materia,

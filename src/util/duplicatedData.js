@@ -40,3 +40,18 @@ export const tieneDuplicadosMateria = (materias) => {
     }
     return false;
 }
+
+/**
+ * Función encargada de verificar si se encuentran instrumentos de evaluaacion repetidos
+ */
+export const tieneDuplicadosInstrumento = (instrumentos) => {
+    let nombres = {};
+    for (let instrumento of instrumentos) {
+        if (nombres[instrumento.nombre]) {
+            return true;
+        } else {
+            nombres[instrumento.nombre] = true;
+        }
+    }
+    return false;
+}
