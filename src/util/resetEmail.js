@@ -38,7 +38,7 @@ const sendResetEmail = async (user, redirectURL) => {
       id,
       nombre,
       redirectURL,
-      resetString
+      hashedString
     );
     // Configuramos el origen y destinatario
     const message = {

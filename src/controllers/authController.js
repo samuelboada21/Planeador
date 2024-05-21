@@ -138,7 +138,6 @@ export const requestPasswordRst = async (req, res, next) => {
 
         // Obtenemos el email y la URL de redireccion
         const {correo_institucional, redirectURL} = req.body;
-        ///1/737227b18d13af349f91328fe2958de053b98fb2b803e5f9d4bf014a7a13020604d87598a6fc7563b56bf4a1870e03a8953ae8058fe22b8037411f148ccfbc0f1
         // Verificamos que el email proporcionado existe
         const user = await User.findOne({
             where: {
