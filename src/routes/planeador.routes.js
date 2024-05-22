@@ -14,7 +14,7 @@ const router = Router();
 // @desc Endpoint encargado de la obtención de todas los planeador
 // @route GET /api/planeador
 // @access solo Admin
-router.get('/', [extractToken, authJWT, isAdmin, validatePlaneadorData], planeadorController.getPlenadores);//
+router.get('/', [extractToken, authJWT, isAdmin, validatePlaneadorData], planeadorController.getPlaneadores);//
 
 // @desc Endpoint encargado de la obtención de un planeador por id
 // @route GET /api/planeador/:id

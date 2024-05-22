@@ -16,6 +16,11 @@ const router = Router();
 // @access solo Admin
 router.get('/', [extractToken, authJWT, isAdmin, validateTipoEvidenciaData], tipoEvidenciaController.getTipoEvidencias);//probado
 
+// @desc Endpoint encargado de la obtención de un los tipos de evidencia filtrados por RaCurso
+// @route GET /api/tipoEvidencia/raCurso/:id
+// @access solo Admin
+router.get('/raCurso/:id', [extractToken, authJWT, isAdmin, validateTipoEvidenciaData], tipoEvidenciaController.getTipoByRaCurso);//probado
+
 // @desc Endpoint encargado de la obtención de un tipo de evidencia por id
 // @route GET /api/tipoEvidencia/:id
 // @access solo Admin

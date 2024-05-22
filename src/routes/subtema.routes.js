@@ -22,6 +22,11 @@ const router = Router();
 // @access solo Admin
 router.get('/', [extractToken, authJWT, isAdmin, validateSubtemaData], subtemaController.getSubtemas);//probado
 
+// @desc Endpoint encargado de la obtención de los subtemas por unidad tematica
+// @route GET /api/subtema/unidad/:id
+// @access solo Admin
+router.get('/unidad/:id', [extractToken, authJWT, isAdmin, validateSubtemaData], subtemaController.getSubtemasByUnidad);//probado
+
 // @desc Endpoint encargado de la obtención de un subtema por id
 // @route GET /api/subtema/:id
 // @access solo Admin

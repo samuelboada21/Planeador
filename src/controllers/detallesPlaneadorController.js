@@ -3,10 +3,10 @@ import Usuario from "../models/Usuario.js";
 import Planeador from "../models/Planeador.js";
 import Detalles from "../models/DetallesPlaneador.js";
 
-/* --------- getPlaneadores function -------------- */
-const getPlaneadores = async (req, res, next) => {
+/* --------- getPlaneadorDetalles function -------------- */
+const getPlaneadorDetalles = async (req, res, next) => {
   try {
-    // Obtenemos las planeadores
+    // Obtenemos todos los detalles(filas) de un planeador
     const planeadores = await Planeador.findAll({
       attributes: ["id", "nombre", "area_formacion"],
       include: [
@@ -227,7 +227,7 @@ const deletePlaneador = async (req, res, next) => {
 };
 
 const controller = {
-  getPlaneadores,
+  getPlenadores,
   getPlaneadorById,
   createPlaneador,
   updatePlaneador,

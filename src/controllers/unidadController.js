@@ -28,6 +28,40 @@ const getUnidades = async (req, res, next) => {
   }
 };
 
+/* --------- getUnidadesByMateria function -------------- */
+const getUnidadesByMateria = async (req, res, next) => {
+  const { id } = req.params; // Obtenemos el ID de la materia
+  try {
+    // Verificamos si la materia existe
+    const materia = await Materia.findByPk(id);
+    if (!materia) {
+      req.log.warn(
+        `Materia con id ${id} no encontrada al intentar obtener las unidades tematicas`
+      );
+      return res.status(404).json({
+        error: "Materia no encontrada para mostrar las unidades tematicas",
+      });
+    }
+    // Obtenemos las unidades asociadas a la materia
+    const unidades = await UnidadTematica.findAll({
+      attributes: ["id", "nombre", "descripcion"],
+      where: { materia_id: id }, // Filtramos por el ID de la materia
+      include: {
+        model: Materia,
+        attributes: ["codigo","nombre"],
+      },
+    });
+    // Respondemos al usuario
+    res.status(200).json(unidades);
+  } catch (err) {
+    const errorGetUn = new Error(
+      `Ocurrió un problema al obtener las unidades tematicas - ${err.message}`
+    );
+    errorGetUn.stack = err.stack;
+    next(errorGetUn);
+  }
+};
+
 /* --------- getUnidadById function -------------- */
 const getUnidadById = async (req, res, next) => {
   // Obtenemos el id de la unidad a obtener
@@ -342,6 +376,7 @@ const deleteUnidad = async (req, res, next) => {
 
 const controller = {
   getUnidades,
+  getUnidadesByMateria,
   getUnidadById,
   createUnidad,
   updateUnidad,

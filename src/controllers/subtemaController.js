@@ -25,6 +25,40 @@ const getSubtemas = async (req, res, next) => {
   }
 };
 
+/* --------- getSubtemasByUnidad function -------------- */
+const getSubtemasByUnidad = async (req, res, next) => {
+  const { id } = req.params; // Obtenemos el ID de la unidad temática
+  try {
+    // Verificamos si la unidad temática existe
+    const unidadTematica = await UnidadTematica.findByPk(id);
+    if (!unidadTematica) {
+      req.log.warn(
+        `Unidad temática con id ${id} no encontrada al intentar obtener subtemas`
+      );
+      return res.status(404).json({
+        error: "Unidad temática no encontrada para mostrar los subtemas",
+      });
+    }
+    // Obtenemos los subtemas asociados a la unidad temática
+    const subtemas = await Subtema.findAll({
+      attributes: ["id", "nombre", "descripcion"],
+      where: { unidad_tematica_id: id }, // Filtramos por el ID de la unidad temática
+      include: {
+        model: UnidadTematica,
+        attributes: ["nombre"],
+      },
+    });
+    // Respondemos al usuario
+    res.status(200).json(subtemas);
+  } catch (err) {
+    const errorGetSub = new Error(
+      `Ocurrió un problema al obtener los subtemas - ${err.message}`
+    );
+    errorGetSub.stack = err.stack;
+    next(errorGetSub);
+  }
+};
+
 /* --------- getSubtemaById function -------------- */
 const getSubtemaById = async (req, res, next) => {
   // Obtenemos el id del subtema a obtener
@@ -290,6 +324,7 @@ const createSubtemas = async (req, res, next) => {
 
 const controller = {
   getSubtemas,
+  getSubtemasByUnidad,
   getSubtemaById,
   createSubtema,
   updateSubtema,

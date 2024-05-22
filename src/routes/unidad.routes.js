@@ -22,6 +22,11 @@ const router = Router();
 // @access solo Admin
 router.get('/', [extractToken, authJWT, isAdmin, validateUnidadData], unidadController.getUnidades);//probado
 
+// @desc Endpoint encargado de la obtención de unidades tematicas por materia
+// @route GET /api/unidad/materia/:id
+// @access solo Admin
+router.get('/materia/:id', [extractToken, authJWT, isAdmin, validateUnidadData], unidadController.getUnidadesByMateria);//probado
+
 // @desc Endpoint encargado de la obtención de una unidad tematica por id
 // @route GET /api/unidad/:id
 // @access solo Admin

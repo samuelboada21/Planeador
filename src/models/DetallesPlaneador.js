@@ -13,7 +13,7 @@ const DetallesPlaneador = sequelize.define(
       autoIncrement: true,
     },
     valor_evaluacion: {
-      type: DataTypes.ARRAY,
+      type: DataTypes.TEXT,
       allowNull: false,
       validate: {
         notEmpty: {
@@ -40,7 +40,7 @@ const DetallesPlaneador = sequelize.define(
       },
     },
     corte_periodo: {
-      type: DataTypes.NUMBER,
+      type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
         notEmpty: {

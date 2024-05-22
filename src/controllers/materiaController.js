@@ -1,13 +1,11 @@
 import UnidadTematica from "../models/UnidadTematica.js";
 import Subtema from "../models/Subtema.js";
 import Competencia from "../models/Competencia.js";
-import MateriaCompetencia from "../models/MateriaCompetencia.js";
 import Materia from "../models/Materia.js";
 import XLSX from "xlsx";
 import { tieneDuplicadosMateria } from "../util/duplicatedData.js";
 import sequelize from "../database/db.js";
 import { asignCompetences, asignCompetencesUpdate } from "../util/createdJoins.js";
-import logger from "../middlewares/logger.js";
 
 /* --------- getMaterias function -------------- */
 const getMaterias = async (req, res, next) => {

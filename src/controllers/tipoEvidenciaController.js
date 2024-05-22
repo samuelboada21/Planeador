@@ -25,6 +25,41 @@ const getTipoEvidencias = async (req, res, next) => {
   }
 };
 
+/* --------- getTipoByRaCurso function -------------- */
+const getTipoByRaCurso = async (req, res, next) => {
+  const { id } = req.params; // Obtenemos el ID del RaCurso
+  try {
+    // Verificamos si el RaCurso existe
+    const raCurso = await RaCurso.findByPk(id);
+    if (!raCurso) {
+      req.log.warn(
+        `Resultado de aprendizaje del curso con id ${id} no encontrado al intentar obtener los tipos de evidencia`
+      );
+      return res.status(404).json({
+        error: "Resultado de aprendizaje del curso no encontrado para mostrar los tipos de evidencia",
+      });
+    }
+    // Obtenemos los tipos de evidencia asociados al RaCurso
+    const tipos = await TipoEvidencia.findAll({
+      attributes: ["id", "nombre"],
+      where: { ra_curso_id: id }, // Filtramos por el ID del RaCurso
+      include: {
+        model: RaCurso,
+        attributes: ["nombre"],
+      },
+    });
+    // Respondemos al usuario
+    res.status(200).json(tipos);
+  } catch (err) {
+    const errorGetTip = new Error(
+      `Ocurrió un problema al obtener los tipos de evidencia - ${err.message}`
+    );
+    errorGetTip.stack = err.stack;
+    next(errorGetTip);
+  }
+};
+
+
 /* --------- getTipoEvidenciaById function -------------- */
 const getTipoEvidenciaById = async (req, res, next) => {
   // Obtenemos el id del tipo de evidencia a obtener
@@ -198,6 +233,7 @@ const deleteTipoEvidencia = async (req, res, next) => {
 
 const controller = {
   getTipoEvidencias,
+  getTipoByRaCurso,
   getTipoEvidenciaById,
   createTipoEvidencia,
   updateTipoEvidencia,
