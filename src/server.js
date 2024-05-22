@@ -28,6 +28,7 @@ import subtemaRoutes from './routes/subtema.routes.js';
 import raCursoRoutes from './routes/raCurso.routes.js';
 import tipoEvidenciaRoutes from './routes/tipoEvidencia.routes.js';
 import instrumentoRoutes from './routes/instrumento.routes.js';
+import planeadorRoutes from './routes/planeador.routes.js';
 
 // Cargar las variables de entorno desde el archivo .env
 dotenv.config();
@@ -92,6 +93,7 @@ app.use('/api/subtema', subtemaRoutes);
 app.use('/api/raCurso',raCursoRoutes);
 app.use('/api/tipoEvidencia',tipoEvidenciaRoutes);
 app.use('/api/instrumento', instrumentoRoutes);
+app.use('/api/planeador', planeadorRoutes);
 
 // En caso de acceder a una ruta no especificada
 app.all('*', (req, res) => {

@@ -12,6 +12,8 @@ import RaCurso from "../models/RaCurso.js";
 import TipoEvidencia from "../models/TipoEvidencia.js";
 import TipoInstrumento from "../models/TipoInstrumento.js";
 import Instrumento from "../models/InstrumentoEvaluacion.js";
+import Planeador from "../models/Planeador.js";
+import Detalles from "../models/DetallesPlaneador.js";
 
 // Definimos la relación Usuario - PasswordReset
 User.hasOne(PasswordReset, { foreignKey: "usuario_id", onDelete: "RESTRICT" });
@@ -72,8 +74,11 @@ Competencia.belongsToMany(Materia, {
 Materia.hasMany(RaCurso, { foreignKey: "materia_id", onDelete: "RESTRICT" });
 RaCurso.belongsTo(Materia, { foreignKey: "materia_id" });
 
-// Definimos la relación Materia - Ra Curso
-RaCurso.hasMany(TipoEvidencia, { foreignKey: "ra_curso_id", onDelete: "RESTRICT" });
+// Definimos la relación Ra Curso - Tipo evidencia
+RaCurso.hasMany(TipoEvidencia, {
+  foreignKey: "ra_curso_id",
+  onDelete: "RESTRICT",
+});
 TipoEvidencia.belongsTo(RaCurso, { foreignKey: "ra_curso_id" });
 
 // Definimos la relación Tipo evidencia - Instrumento evaluacion
@@ -85,3 +90,10 @@ Instrumento.belongsToMany(TipoEvidencia, {
   through: TipoInstrumento,
   foreignKey: "instrumento_id",
 });
+
+// Definimos la relación Planeador - Detalles Planeador
+Planeador.hasMany(Detalles, {
+  foreignKey: "planeador_id",
+  onDelete: "RESTRICT",
+});
+Detalles.belongsTo(Planeador, { foreignKey: "planeador_id" });

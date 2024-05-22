@@ -49,9 +49,9 @@ const getPlaneadorById = async (req, res, next) => {
           attributes: ["id", "codigo", "nombre"],
         },
         {
-            model: Detalles,
-            attributes: ["id"]
-        }
+          model: Detalles,
+          attributes: ["id"],
+        },
       ],
     });
     if (!planeador) {
@@ -84,188 +84,153 @@ const createPlaneador = async (req, res, next) => {
   // Obtenemos los datos del planeador a crear
   const { area_formacion, user_id, materia_id } = req.body;
   try {
-    const [competenciaExist, categoria_exist] = await Promise.all([
-      Competencia.findOne({
-        where: {
-          nombre,
-        },
-      }),
-      Categoria.findByPk(categoria_id),
+    const [user_exist, materia_exist] = await Promise.all([
+      Usuario.findByPk(user_id),
+      Materia.findByPk(materia_id),
     ]);
-    // Comprobamos que el nombre de la competencia sea unico
-    if (competenciaExist)
-      return res.status(400).json({
-        error: `El nombre de la competencia ${nombre} ya se encuentra registrado`,
-      });
-    // Comprobamos que el id de la categoria corresponda a uno válido
-    if (!categoria_exist) {
+    // Comprobamos que el id del usuario corresponda a uno válido
+    if (!user_exist) {
       req.log.warn(
-        `Intento de asociacion de una categoria inexistente a una nueva competencia por parte del usuario con id ${req.user.id}`
+        `Intento de asociacion de un usuario inexistente a un nuevo planeador por parte del usuario con id ${req.user.id}`
       );
       return res.status(400).json({
         error:
-          "El id de categoria proporcionado no corresponde con ninguna existente",
+          "El id del usuario proporcionado no corresponde con ninguno existente",
       });
     }
-    //código de la competencia automático
-    const categoriaNormalized = normalizeText(categoria_exist.nombre);
-    let codigoPrefix = "";
-    if (categoriaNormalized === "competencias genericas") {
-      codigoPrefix = "CG";
-    } else if (categoriaNormalized === "competencias especificas") {
-      codigoPrefix = "CE";
-    } else {
-      return res.status(400).json({ error: "Tipo de categoría no valido" });
+    // Comprobamos que el id de la materia corresponda a uno válido
+    if (!materia_exist) {
+      req.log.warn(
+        `Intento de asociacion de una materia inexistente a un nuevo planeador por parte del usuario con id ${req.user.id}`
+      );
+      return res.status(400).json({
+        error:
+          "El id de la materia proporcionado no corresponde con ninguna existente",
+      });
     }
-    // Consultamos la base de datos para obtener la cantidad de competencias asociadas a esta categoría
-    const cantidadCompetencias = await Competencia.count({
-      where: { categoria_id },
-    });
-    // Construimos el código de la competencia
-    const codigo = codigoPrefix + (cantidadCompetencias + 1);
-    // Creamos la competencia
-    await Competencia.create({
-      codigo,
-      nombre: nombre.toUpperCase(),
-      descripcion,
-      categoria_id,
+
+    //generamos el nombre del nuevo planeador
+    const count = Planeador.count();
+    const nombre = `PD--${materia_exist.nombre}--${count + 1}`;
+
+    // Creamos el planeador
+    await Planeador.create({
+      nombre,
+      area_formacion,
+      user_id,
+      materia_id,
     });
     // Respondemos al usuario
-    res.status(200).json({ message: "Competencia creada exitosamente" });
+    res
+      .status(200)
+      .json({ message: "Datos generales del planeador creados exitosamente" });
   } catch (err) {
-    const errorCreateComp = new Error(
-      `Ocurrio un problema al crear la competencia - ${err.message}`
+    const errorCreatePlan = new Error(
+      `Ocurrio un problema al crear los datos generales del planeador - ${err.message}`
     );
-    errorCreateComp.stack = err.stack;
-    next(errorCreateComp);
+    errorCreatePlan.stack = err.stack;
+    next(errorCreatePlan);
   }
 };
 
-/* --------- updateCompetencia function -------------- */
-const updateCompetencia = async (req, res, next) => {
-  // Obtenemos el id de la categoria a actualizar
+/* --------- updatePlaneador function -------------- */
+const updatePlaneador = async (req, res, next) => {
+  // Obtenemos el id del planeador a actualizar
   const { id } = req.params;
   // Obtenemos los datos a actualizar
-  const { nombre, descripcion, estado, categoria_id } = req.body;
+  const { area_formacion, user_id, materia_id } = req.body;
   try {
-    const [competencia, competenciaExist, categoria_exist] = await Promise.all([
-      Competencia.findByPk(id),
-      Competencia.findOne({
-        where: {
-          nombre,
-        },
-      }),
-      Categoria.findByPk(categoria_id),
+    const [planeador, user_exist, materia_exist] = await Promise.all([
+      Planeador.findByPk(id),
+      Usuario.findByPk(user_id),
+      Materia.findByPk(materia_id),
     ]);
-    // Verificamos la competencia
-    if (!competencia) {
+    // Verificamos el planeador
+    if (!planeador) {
       req.log.warn(
-        `El usuario con id ${req.user.id} intento acceder a una competencia no especificada`
+        `El usuario con id ${req.user.id} intento acceder a un planeador no especificado`
       );
       return res.status(400).json({
-        error: "No se encuentra ninguna competencia con el id especificado",
+        error: "No se encuentra ningun planeador con el id especificado",
       });
     }
-    // Comprobamos que el nombre sea unico
-    if (competenciaExist && competenciaExist.nombre !== competencia.nombre)
-      return res.status(400).json({
-        error: `El nombre de la competencia ${nombre} ya se encuentra registrado`,
-      });
-    // Comprobamos que el id de la categoria corresponda a uno válido
-    if (!categoria_exist) {
+    // Comprobamos que el id del usuario corresponda a uno válido
+    if (!user_exist) {
       req.log.warn(
-        `Intento de asociacion de una categoria inexistente a una nueva competencia por parte del usuario con id ${req.user.id}`
+        `Intento de asociacion de un usuario inexistente a uno nuevo planeador por parte del usuario con id ${req.user.id}`
       );
       return res.status(400).json({
         error:
-          "El id de la categoria proporcionado no corresponde con ninguna existente",
+          "El id del usuario proporcionado no corresponde con ninguno existente",
       });
     }
-    //código de la competencia automático
-    const categoriaNormalized = normalizeText(categoria_exist.nombre);
-    let codigoPrefix = "";
-    if (categoriaNormalized === "competencias genericas") {
-      codigoPrefix = "CG";
-    } else if (categoriaNormalized === "competencias especificas") {
-      codigoPrefix = "CE";
-    } else {
-      return res.status(400).json({ error: "Tipo de categoría no valido" });
+    // Comprobamos que el id de la materia corresponda a uno válido
+    if (!materia_exist) {
+      req.log.warn(
+        `Intento de asociacion de una materia inexistente a uno nuevo planeador por parte del usuario con id ${req.user.id}`
+      );
+      return res.status(400).json({
+        error:
+          "El id de la materia proporcionada no corresponde con ninguna existente",
+      });
     }
-    // Consultamos la base de datos para obtener la cantidad de competencias asociadas a esta categoría
-    const cantidadCompetencias = await Competencia.count({
-      where: { categoria_id },
+    // Actualizamos el planeador
+    await planeador.update({
+      area_formacion,
+      user_id,
+      materia_id,
     });
-    // Construimos el código de la competencia
-    const codigo = codigoPrefix + cantidadCompetencias;
-    // Actualizamos la competencia
-    await competencia.update({
-      codigo,
-      nombre: nombre.toUpperCase(),
-      descripcion,
-      estado,
-      categoria_id,
-    });
-    // ajustados el estado del ra para que coincida con su competencia
-    await Resultado_Aprendizaje.update(
-      {
-        estado: competencia.estado,
-      },
-      {
-        where: {
-          competencia_id: competencia.id,
-        },
-      }
-    );
+
     // Respondemos al usuario
-    res.status(200).json({ message: "Competencia actualizada correctamente" });
+    res
+      .status(200)
+      .json({
+        message: "Datos generales del planeador actualizados correctamente",
+      });
   } catch (err) {
-    const errorUpdateComp = new Error(
-      `Ocurrio un problema al actualizar la competencia - ${err.message}`
+    const errorUpdatePlan = new Error(
+      `Ocurrio un problema al actualizar los datos generales del planeador - ${err.message}`
     );
-    errorUpdateComp.stack = err.stack;
-    next(errorUpdateComp);
+    errorUpdatePlan.stack = err.stack;
+    next(errorUpdatePlan);
+  }
+};
+/* --------- deletePlaneador function -------------- */
+const deletePlaneador = async (req, res, next) => {
+  // Obtenemos el identificador del planeador
+  const { id } = req.params;
+
+  try {
+    // Verificamos la existencia del planeador
+    const planeador = await Planeador.findByPk(id, { include: Detalles });
+    if (!planeador) {
+      req.log.warn("Intento de desvinculación de un planeador inexistente");
+      return res
+        .status(400)
+        .json({ error: "No se encontró el planeador especificado" });
+    }
+    // Eliminar todos los detalles planeador(filas) asociados al planeador general
+    await Detalles.destroy({ where: { planeador_id: planeador.id } });
+    // Eliminar la materia misma
+    await planeador.destroy();
+    // Respondemos al usuario
+    res.status(200).json({
+      message: "El planeador ha sido eliminado de la plataforma correctamente",
+    });
+  } catch (error) {
+    const errorDelPlan = new Error(
+      `Ocurrió un problema al intentar eliminar el planeador - ${error.message}`
+    );
+    errorDelPlan.stack = error.stack;
+    next(errorDelPlan);
   }
 };
 
-/* --------- removeResultado function -------------- */
-const unlinkResultado = async (req, res, next) => {
-  // Obtenemos el identificador del resultado de aprendizaje
-  const { id } = req.params;
-  try {
-    console.log(id);
-    // Obtenemos el resultado a desasociar
-    const resultado = await Resultado_Aprendizaje.findByPk(id, {
-      include: [Competencia],
-    });
-    // verificamos el RA
-    if (!resultado) {
-      req.log.warn(
-        `El usuario con id ${req.user.id} intento desvincular un resultado de aprendizaje inexsistente o no asociada a la competencia especificada.`
-      );
-      return res.status(400).json({
-        error:
-          "No se encuentra ningun resultado de aprendizaje con el id especificado",
-      });
-    }
-    // Desvinculamos el resultado de su competencia
-    await resultado.setCompetencia(null);
-    // Respondemos al usuario
-    res.status(200).json({
-      message: `Resultado de aprendizaje ${resultado.codigo} desvinculado exitosamente`,
-    });
-  } catch (err) {
-    const errorUnlinkRA = new Error(
-      `Ocurrio un problema al desvincular el RA de su competencia - ${err.message}`
-    );
-    errorUnlinkRA.stack = err.stack;
-    next(errorUnlinkRA);
-  }
-};
 const controller = {
-  getCompetencias,
-  getCompetenciaById,
-  createCompetencia,
-  updateCompetencia,
-  unlinkResultado,
+  getPlenadores,
+  getPlaneadorById,
+  createPlaneador,
+  updatePlaneador,
+  deletePlaneador,
 };
 export default controller;
