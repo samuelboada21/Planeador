@@ -14,6 +14,10 @@ import TipoInstrumento from "../models/TipoInstrumento.js";
 import Instrumento from "../models/InstrumentoEvaluacion.js";
 import Planeador from "../models/Planeador.js";
 import Detalles from "../models/DetallesPlaneador.js";
+import DetallesRaCurso from "../models/DetallesRaCurso.js";
+import DetallesInstrumento from "../models/DetallesInstrumento.js";
+import DetallesTipo from "../models/DetallesTipo.js";
+import DetallesUnidad from "../models/DetallesUnidad.js";
 
 // Definimos la relación Usuario - PasswordReset
 User.hasOne(PasswordReset, { foreignKey: "usuario_id", onDelete: "RESTRICT" });
@@ -70,6 +74,7 @@ Competencia.belongsToMany(Materia, {
   through: MateriaCompetencia,
   foreignKey: "competencia_id",
 });
+
 // Definimos la relación Materia - Ra Curso
 Materia.hasMany(RaCurso, { foreignKey: "materia_id", onDelete: "RESTRICT" });
 RaCurso.belongsTo(Materia, { foreignKey: "materia_id" });
@@ -91,9 +96,53 @@ Instrumento.belongsToMany(TipoEvidencia, {
   foreignKey: "instrumento_id",
 });
 
+///////////////////////////////////////////////////////////////////////
+///////////////RELACIONES DE DETALLES PLANEADOR //////////////////////
+/////////////////////////////////////////////////////////////////////
+
 // Definimos la relación Planeador - Detalles Planeador
 Planeador.hasMany(Detalles, {
   foreignKey: "planeador_id",
   onDelete: "RESTRICT",
 });
 Detalles.belongsTo(Planeador, { foreignKey: "planeador_id" });
+
+// Definimos la relación Detalles - RaCurso
+Detalles.belongsToMany(RaCurso, {
+  through: DetallesRaCurso,
+  foreignKey: "detallesPlaneador_id",
+});
+RaCurso.belongsToMany(Detalles, {
+  through: DetallesRaCurso,
+  foreignKey: "raCurso_id",
+});
+
+// Definimos la relación Detalles - Instrumento
+Detalles.belongsToMany(Instrumento, {
+  through: DetallesInstrumento,
+  foreignKey: "detallesPlaneador_id",
+});
+Instrumento.belongsToMany(Detalles, {
+  through: DetallesInstrumento,
+  foreignKey: "instrumento_id",
+});
+
+// Definimos la relación Detalles - Tipo de evidencia
+Detalles.belongsToMany(TipoEvidencia, {
+  through: DetallesTipo,
+  foreignKey: "detallesPlaneador_id",
+});
+TipoEvidencia.belongsToMany(Detalles, {
+  through: DetallesTipo,
+  foreignKey: "tipo_id",
+});
+
+// Definimos la relación Detalles - Unidades tematicas
+Detalles.belongsToMany(UnidadTematica, {
+  through: DetallesUnidad,
+  foreignKey: "detallesPlaneador_id",
+});
+UnidadTematica.belongsToMany(Detalles, {
+  through: DetallesUnidad,
+  foreignKey: "unidad_id",
+});

@@ -49,7 +49,7 @@ const DetallesPlaneador = sequelize.define(
       },
     },
     semana_actividad_desarrollada: {
-      type: DataTypes.ARRAY,
+      type: DataTypes.TEXT,
       allowNull: false,
       validate: {
         notEmpty: {

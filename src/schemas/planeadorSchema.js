@@ -11,8 +11,8 @@ const planeadorSchema = z
             invalid_type_error: "El nombre del planeador solo puede ser texto",
             required_error: "El nombre del planeador es requerido",
           })
-          .min(3, { message: "El nombre del planeadpr es muy corto" })
-          .max(100, {
+          .min(3, { message: "El nombre del planeador es muy corto" })
+          .max(150, {
             message:
               "El nombre del planeador supera la cant. de caracteres permitida",
           }),
