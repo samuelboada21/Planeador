@@ -212,7 +212,7 @@ const updateTeacherDataDir = async (req, res, next) => {
     await teacher.update({
       codigo,
       nombre,
-      tipo_vinculacion,
+      tipo_vinculacion: tipo_vinculacion.toUpperCase(),
       departamento,
       correo_personal,
       correo_institucional,
@@ -354,7 +354,7 @@ const updateDirector = async (req, res, next) => {
     await director.update({
       codigo,
       nombre,
-      tipo_vinculacion,
+      tipo_vinculacion: tipo_vinculacion.toUpperCase(),
       departamento,
       correo_personal,
       correo_institucional,

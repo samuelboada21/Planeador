@@ -13,7 +13,7 @@ const DetallesPlaneador = sequelize.define(
       autoIncrement: true,
     },
     valor_evaluacion: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING,
       allowNull: false,
       validate: {
         notEmpty: {

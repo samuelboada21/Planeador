@@ -18,6 +18,7 @@ import DetallesRaCurso from "../models/DetallesRaCurso.js";
 import DetallesInstrumento from "../models/DetallesInstrumento.js";
 import DetallesTipo from "../models/DetallesTipo.js";
 import DetallesUnidad from "../models/DetallesUnidad.js";
+import Usuario from "../models/Usuario.js";
 
 // Definimos la relación Usuario - PasswordReset
 User.hasOne(PasswordReset, { foreignKey: "usuario_id", onDelete: "RESTRICT" });
@@ -99,6 +100,27 @@ Instrumento.belongsToMany(TipoEvidencia, {
 ///////////////////////////////////////////////////////////////////////
 ///////////////RELACIONES DE DETALLES PLANEADOR //////////////////////
 /////////////////////////////////////////////////////////////////////
+
+// Definimos la relación Materia - Planeador
+Materia.hasMany(Planeador, {
+  foreignKey: "materia_id",
+  onDelete: "RESTRICT",
+});
+Planeador.belongsTo(Materia, { foreignKey: "materia_id" });
+
+// Definimos la relación Usuario - Planeador
+Usuario.hasMany(Planeador, {
+  foreignKey: "user_id",
+  onDelete: "RESTRICT",
+});
+Planeador.belongsTo(Usuario, { foreignKey: "user_id" });
+
+// Definimos la relación ResultadoAprendizaje - Detalles Planeador
+Resultado_Aprendizaje.hasMany(Detalles, {
+  foreignKey: "ra_id",
+  onDelete: "RESTRICT",
+});
+Detalles.belongsTo(Resultado_Aprendizaje, { foreignKey: "ra_id" });
 
 // Definimos la relación Planeador - Detalles Planeador
 Planeador.hasMany(Detalles, {

@@ -1,35 +1,35 @@
 import z from "zod";
 import validateData from "../util/validateData.js";
 
-// Custom validation for 'valor_evaluacion'
-const valorEvaluacionSchema = z
-  .array(
-    z.number().min(1, {
-      message: "Cada valor del instrumento debe ser al menos 1%",
-    }),
-    {
-      invalid_type_error:
-        "Los valores de los instrumentos deben ser un arreglo de números",
-      required_error: "'Los valores de los instrumentos son requeridos",
-    }
-  )
-  .refine(
-    (valores) => {
-      const suma = valores.reduce((acc, curr) => acc + curr, 0);
-      return suma <= 100;
-    },
-    {
-      message:
-        "La suma de todos los valores de los instrumentos no debe exceder 100%",
-    }
-  );
+// // Custom validation for 'valor_evaluacion'
+// const valorEvaluacionSchema = z
+//   .array(
+//     z.string().min(1, {
+//       message: "Cada valor del instrumento debe ser al menos 1%",
+//     }),
+//   )
+//   .refine(
+//     (valores) => {
+//       const suma = valores.reduce((acc, curr) => acc + Number(curr), 0);
+//       console.log("SUMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", suma);
+//       return suma <= 100;
+//     },
+//     {
+//       message:
+//         "La suma de todos los valores de los instrumentos no debe exceder 100%",
+//     }
+//   );
 
 // Esquema para detalles planeador
 const detallesSchema = z
   .object({
     body: z
       .object({
-        valor_evaluacion: valorEvaluacionSchema,
+        valor_evaluacion: z.string({
+          invalid_type_error:
+            "Valor de la evaluacion debe ser un string separado por comas cada valor",
+          required_error: "Los valores de evaluacion son requeridos",
+        }),
         estrategia_retroalimentacion: z
           .string({
             invalid_type_error:
@@ -49,7 +49,7 @@ const detallesSchema = z
             required_error: "La semana de retroalimentacion es requerida",
           })
           .min(7, { message: "La semana de retroalimentacion es muy corta" })
-          .max(20, {
+          .max(40, {
             message:
               "La semana de retroalimentacion supera la cant. de caracteres permitida",
           }),

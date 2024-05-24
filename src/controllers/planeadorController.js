@@ -33,7 +33,7 @@ const getPlaneadores = async (req, res, next) => {
 
 /* --------- getPlaneadorById function -------------- */
 const getPlaneadorById = async (req, res, next) => {
-  // Obtenemos el id del pleandor a obtener
+  // Obtenemos el id del planeador a obtener
   const { id } = req.params;
   try {
     // Obtenemos y verificamos el planeador
@@ -73,12 +73,6 @@ const getPlaneadorById = async (req, res, next) => {
   }
 };
 
-const normalizeText = (text) => {
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-};
 /* --------- createPlaneador function -------------- */
 const createPlaneador = async (req, res, next) => {
   // Obtenemos los datos del planeador a crear
@@ -110,7 +104,7 @@ const createPlaneador = async (req, res, next) => {
     }
 
     //generamos el nombre del nuevo planeador
-    const count = Planeador.count();
+    const count = await Planeador.count();
     const nombre = `PD--${materia_exist.nombre}--${count + 1}`;
 
     // Creamos el planeador

@@ -1,16 +1,19 @@
 import {Router} from 'express';
 // Importamos las funciones del controlador
 import planeadorController from '../controllers/planeadorController.js';
+import detallesController from '../controllers/detallesPlaneadorController.js';
 // Importamos los middlewares de autenticación
 import extractToken from '../middlewares/extractToken.js';
 import authJWT from '../middlewares/verifyJWT.js';
 import isAdmin from '../middlewares/isAdmin.js';
 import {validatePlaneadorData} from '../schemas/planeadorSchema.js'
-
+import {validateDetallesData} from '../schemas/detallesPlaneadorSchema.js';
+ 
 // Inicializamos el router
 const router = Router();
 // Rutas
 
+//-------------------------------RUTAS DEL PLANEADOR GENERAL-------------------------------//
 // @desc Endpoint encargado de la obtención de todas los planeador
 // @route GET /api/planeador
 // @access solo Admin
@@ -35,6 +38,22 @@ router.put('/update/:id', [extractToken, authJWT, isAdmin, validatePlaneadorData
 // @route DELETE /api/planeador/delete/:id
 // @access solo Admin
 router.delete('/delete/:id', [extractToken, authJWT, isAdmin], planeadorController.deletePlaneador);//
+
+//-------------------------------RUTAS DE DETALLES PLANEADOR-------------------------------//
+// @desc Endpoint encargado de la obtención de todas las filas del planeador
+// @route GET /api/planeador/filasPlaneador/:id
+// @access solo Admin
+router.get('/filasPlaneador/:id', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.getDetallesByPlaneador);//
+
+// @desc Endpoint encargado de la obtención de una fila del planeador
+// @route GET /api/planeador/fila/:id
+// @access solo Admin
+router.get('/fila/:id', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.getDetallesById);//
+
+// @desc Endpoint encargado de la obtención de una fila del planeador
+// @route POST /api/planeador/fila/create
+// @access solo Admin
+router.post('/fila/create', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.createDetallesPlaneador);//
 
 // Exportamos el router
 export default router;

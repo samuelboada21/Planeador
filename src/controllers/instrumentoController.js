@@ -62,7 +62,7 @@ const getInstrumentoById = async (req, res, next) => {
 };
 
 /* --------- createInstrumento function -------------- */
-const createInstrumento = async (req, res) => {
+const createInstrumento = async (req, res, next) => {
   // Obtenemos los datos del instrumento a crear
   const { nombre, descripcion, tipos } = req.body;
   let result;
