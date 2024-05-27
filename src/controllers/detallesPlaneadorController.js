@@ -15,6 +15,7 @@ import detalles_tipo from "../models/DetallesTipo.js";
 import detalles_instrumento from "../models/DetallesInstrumento.js";
 import detalles_unidad from "../models/DetallesUnidad.js";
 import TipoInstrumento from "../models/TipoInstrumento.js";
+import DetallesInstrumento from "../models/DetallesInstrumento.js";
 
 /* --------- getDetallesByPlaneador function -------------- */
 const getDetallesByPlaneador = async (req, res, next) => {
@@ -81,10 +82,9 @@ const getDetallesByPlaneador = async (req, res, next) => {
 
 /* --------- getDetallesById function -------------- */
 const getDetallesById = async (req, res, next) => {
-  // Obtenemos el id del pleandor a obtener
-  const { id } = req.params;
+  const { id } = req.params; // Obtenemos el id de la fila del planeador a obtener
   try {
-    // Obtenemos y verificamos el planeador
+    // Obtenemos y verificamos el detalle del planeador
     const detalle = await Detalles.findByPk(id, {
       attributes: [
         "id",
@@ -110,27 +110,10 @@ const getDetallesById = async (req, res, next) => {
                 {
                   model: Instrumento,
                   attributes: ["id", "codigo", "nombre"],
-                  include: [
-                    {
-                      model: Detalles,
-                      attributes: [],
-                      where: { id: id },
-                      through: { attributes: [] },
-                    },
-                  ],
-                  through: { attributes: [] },
-                },
-                {
-                  model: Detalles,
-                  attributes: [],
-                  where: { id: id },
-                  through: { attributes: [] },
                 },
               ],
-              through: { attributes: [] },
             },
           ],
-          through: { attributes: [] },
         },
         {
           model: UnidadTematica,
@@ -138,17 +121,19 @@ const getDetallesById = async (req, res, next) => {
         },
       ],
     });
+
     if (!detalle) {
       req.log.warn(
         `El usuario con id ${req.user.id} intento acceder a una fila del planeador no especificada`
       );
       return res.status(400).json({
         error:
-          "No se encuentra ninguna fila del planeador planeador con el id especificado",
+          "No se encuentra ninguna fila del planeador con el id especificado",
       });
     }
+
     // Respondemos al usuario
-    res.status(200).json(detalles);
+    res.status(200).json(detalle);
   } catch (err) {
     const errorGetPlanId = new Error(
       `Ocurrio un problema al obtener los datos de la fila del planeador especificado - ${err.message}`
@@ -170,6 +155,8 @@ const createDetallesPlaneador = async (req, res, next) => {
     ra_id,
     materia_id,
     raCursos,
+    tipoEvidencias,
+    instrumentos,
     unidadesTematicas,
   } = req.body;
 
@@ -217,10 +204,11 @@ const createDetallesPlaneador = async (req, res, next) => {
       );
 
       // Asociar RaCursos, Tipos de Evidencia e Instrumentos
-      for (const raCursoData of raCursos) {
+      for (let i = 0; i < raCursos.length; i++) {
+        const raCursoId = raCursos[i];
         const raCurso = await RaCurso.findOne({
           where: {
-            id: raCursoData.id,
+            id: raCursoId,
             materia_id: materia_id,
           },
           transaction: t,
@@ -230,14 +218,19 @@ const createDetallesPlaneador = async (req, res, next) => {
           await detalles_raCurso.create(
             {
               detallesPlaneador_id: detallesPlaneador.id,
-              raCurso_id: raCursoData.id,
+              raCurso_id: raCursoId,
             },
             { transaction: t }
           );
-          for (const tipoEvidenciaData in raCursoData.tiposEvidencias) {
+          //Transformamos las cadenas de texto en arrays
+          const tipoEvidenciasArray = tipoEvidencias[i]
+            .split(",")
+            .map((id) => parseInt(id));
+          for (let j = 0; j < tipoEvidenciasArray.length; j++) {
+            const tipoEvidenciaId = tipoEvidenciasArray[j];
             const tipoEvidencia = await TipoEvidencia.findOne({
               where: {
-                id: tipoEvidenciaData.id,
+                id: tipoEvidenciaId,
                 ra_curso_id: raCurso.id,
               },
               transaction: t,
@@ -251,9 +244,18 @@ const createDetallesPlaneador = async (req, res, next) => {
                 },
                 { transaction: t }
               );
-
-              for (const instrumentoId of tipoEvidenciaData.instrumentos) {
-                // Verificar si ya existe una relación entre el instrumento y el tipo de evidencia
+              //Transformamos las cadenas de texto en arrays
+              const instrumentosArray = instrumentos[j]
+                .split(",")
+                .map((id) => parseInt(id));
+              for (let k = 0; k < instrumentosArray.length; k++) {
+                const instrumentoId = instrumentosArray[k];
+                console.log(
+                  `Curso: ${raCursoId} - tipo: ${tipoEvidenciaId} - inst: ${instrumentoId}`
+                );
+                console.log(
+                  `Curso: ${raCursos} - tipo: ${tipoEvidenciasArray} - inst: ${instrumentosArray}`
+                );
                 const tipoInstrumento = await TipoInstrumento.findOne({
                   where: {
                     tipo_id: tipoEvidencia.id,
@@ -261,9 +263,6 @@ const createDetallesPlaneador = async (req, res, next) => {
                   },
                   transaction: t,
                 });
-
-                // const existInstrumento = await Instrumento.findByPk(instrumentoId)
-                // if(!existInstrumento) {throw new Error(`Instrumento ${instrumentoId} not found`);}
 
                 if (!tipoInstrumento) {
                   // Si no existe, creamos la relación en la tabla intermedia TipoInstrumento
@@ -275,24 +274,36 @@ const createDetallesPlaneador = async (req, res, next) => {
                     { transaction: t }
                   );
                 }
-                // Crear relación en DetallesInstrumento
-                await detalles_instrumento.create(
-                  {
+                //verificamos si ya existe relacion entre el detallesPlaneador y el instrumento
+                const tipoDetalles = await DetallesInstrumento.findOne({
+                  where: {
                     detallesPlaneador_id: detallesPlaneador.id,
                     instrumento_id: instrumentoId,
                   },
-                  { transaction: t }
+                  transaction: t,
+                });
+                if (!tipoDetalles) {
+                  // Crear relación en DetallesInstrumento
+                  await detalles_instrumento.create(
+                    {
+                      detallesPlaneador_id: detallesPlaneador.id,
+                      instrumento_id: instrumentoId,
+                    },
+                    { transaction: t }
+                  );
+                }
+                console.log(
+                  `Curso: ${raCursoId} - tipo: ${tipoEvidenciaId} - inst: ${instrumentoId}`
                 );
               }
             }
           }
         } else {
           throw new Error(
-            `RaCurso con id ${raCursoData.id} no pertenece a la materia con id ${materia_id}`
+            `RaCurso con id ${raCursoId} no pertenece a la materia con id ${materia_id}`
           );
         }
       }
-
       // Asociar Unidades Tematicas
       for (const unidadId of unidadesTematicas) {
         const unidadTematica = await UnidadTematica.findByPk(unidadId, {
@@ -310,7 +321,8 @@ const createDetallesPlaneador = async (req, res, next) => {
         }
       }
 
-      res.status(201).json(detallesPlaneador);
+      // Respondemos al usuario
+      res.status(200).json({ message: "Fila creada exitosamente" });
     });
   } catch (err) {
     next(
