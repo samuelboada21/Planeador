@@ -65,5 +65,7 @@ router.put('/fila/update/:id', [extractToken, authJWT, isAdmin, validateDetalles
 // @access solo Admin
 router.delete('/fila/delete/:id', [extractToken, authJWT, isAdmin], detallesController.deletePlaneador);//probado
 
+router.get('/download-excel/:id', planeadorController.createExcelFile);
+
 // Exportamos el router
 export default router;
