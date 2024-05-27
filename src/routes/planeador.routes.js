@@ -43,17 +43,27 @@ router.delete('/delete/:id', [extractToken, authJWT, isAdmin], planeadorControll
 // @desc Endpoint encargado de la obtención de todas las filas del planeador
 // @route GET /api/planeador/filasPlaneador/:id
 // @access solo Admin
-router.get('/filasPlaneador/:id', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.getDetallesByPlaneador);//
+router.get('/filasPlaneador/:id', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.getDetallesByPlaneador);//probado
 
 // @desc Endpoint encargado de la obtención de una fila del planeador
 // @route GET /api/planeador/fila/:id
 // @access solo Admin
-router.get('/fila/:id', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.getDetallesById);//
+router.get('/fila/:id', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.getDetallesById);//probado
 
 // @desc Endpoint encargado de la obtención de una fila del planeador
 // @route POST /api/planeador/fila/create
 // @access solo Admin
-router.post('/fila/create', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.createDetallesPlaneador);//
+router.post('/fila/create', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.createDetallesPlaneador);//probado
+
+// @desc Endpoint encargado de la actualización de una fila del planeador
+// @route PUT /api/planeador/fila/update/id
+// @access solo Admin
+router.put('/fila/update/:id', [extractToken, authJWT, isAdmin, validateDetallesData], detallesController.updateDetallesPlaneador);//probado - pero si un tipo evidencia no existe, se debe crear primero para poder crear las relaciones correctamente en detallesPlaneador - tipoEvidencia.
+
+// @desc Endpoint encargado de la eliminación de una fila del planeador
+// @route DELETE /api/planeador/fila/delete/id
+// @access solo Admin
+router.delete('/fila/delete/:id', [extractToken, authJWT, isAdmin], detallesController.deletePlaneador);//probado
 
 // Exportamos el router
 export default router;

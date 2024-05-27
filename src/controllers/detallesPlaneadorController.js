@@ -202,125 +202,18 @@ const createDetallesPlaneador = async (req, res, next) => {
         },
         { transaction: t }
       );
-
-      // Asociar RaCursos, Tipos de Evidencia e Instrumentos
-      for (let i = 0; i < raCursos.length; i++) {
-        const raCursoId = raCursos[i];
-        const raCurso = await RaCurso.findOne({
-          where: {
-            id: raCursoId,
-            materia_id: materia_id,
-          },
-          transaction: t,
-        });
-        if (raCurso) {
-          // Crear relación en DetallesRaCurso
-          await detalles_raCurso.create(
-            {
-              detallesPlaneador_id: detallesPlaneador.id,
-              raCurso_id: raCursoId,
-            },
-            { transaction: t }
-          );
-          //Transformamos las cadenas de texto en arrays
-          const tipoEvidenciasArray = tipoEvidencias[i]
-            .split(",")
-            .map((id) => parseInt(id));
-          for (let j = 0; j < tipoEvidenciasArray.length; j++) {
-            const tipoEvidenciaId = tipoEvidenciasArray[j];
-            const tipoEvidencia = await TipoEvidencia.findOne({
-              where: {
-                id: tipoEvidenciaId,
-                ra_curso_id: raCurso.id,
-              },
-              transaction: t,
-            });
-            if (tipoEvidencia) {
-              // Crear relación en DetallesTipo
-              await detalles_tipo.create(
-                {
-                  detallesPlaneador_id: detallesPlaneador.id,
-                  tipo_id: tipoEvidencia.id,
-                },
-                { transaction: t }
-              );
-              //Transformamos las cadenas de texto en arrays
-              const instrumentosArray = instrumentos[j]
-                .split(",")
-                .map((id) => parseInt(id));
-              for (let k = 0; k < instrumentosArray.length; k++) {
-                const instrumentoId = instrumentosArray[k];
-                console.log(
-                  `Curso: ${raCursoId} - tipo: ${tipoEvidenciaId} - inst: ${instrumentoId}`
-                );
-                console.log(
-                  `Curso: ${raCursos} - tipo: ${tipoEvidenciasArray} - inst: ${instrumentosArray}`
-                );
-                const tipoInstrumento = await TipoInstrumento.findOne({
-                  where: {
-                    tipo_id: tipoEvidencia.id,
-                    instrumento_id: instrumentoId,
-                  },
-                  transaction: t,
-                });
-
-                if (!tipoInstrumento) {
-                  // Si no existe, creamos la relación en la tabla intermedia TipoInstrumento
-                  await TipoInstrumento.create(
-                    {
-                      tipo_id: tipoEvidencia.id,
-                      instrumento_id: instrumentoId,
-                    },
-                    { transaction: t }
-                  );
-                }
-                //verificamos si ya existe relacion entre el detallesPlaneador y el instrumento
-                const tipoDetalles = await DetallesInstrumento.findOne({
-                  where: {
-                    detallesPlaneador_id: detallesPlaneador.id,
-                    instrumento_id: instrumentoId,
-                  },
-                  transaction: t,
-                });
-                if (!tipoDetalles) {
-                  // Crear relación en DetallesInstrumento
-                  await detalles_instrumento.create(
-                    {
-                      detallesPlaneador_id: detallesPlaneador.id,
-                      instrumento_id: instrumentoId,
-                    },
-                    { transaction: t }
-                  );
-                }
-                console.log(
-                  `Curso: ${raCursoId} - tipo: ${tipoEvidenciaId} - inst: ${instrumentoId}`
-                );
-              }
-            }
-          }
-        } else {
-          throw new Error(
-            `RaCurso con id ${raCursoId} no pertenece a la materia con id ${materia_id}`
-          );
-        }
-      }
-      // Asociar Unidades Tematicas
-      for (const unidadId of unidadesTematicas) {
-        const unidadTematica = await UnidadTematica.findByPk(unidadId, {
-          transaction: t,
-        });
-        if (unidadTematica) {
-          // Crear relación en DetallesUnidad
-          await detalles_unidad.create(
-            {
-              detallesPlaneador_id: detallesPlaneador.id,
-              unidad_id: unidadTematica.id,
-            },
-            { transaction: t }
-          );
-        }
-      }
-
+      // Gestionar relaciones
+      await manageDetallesRelations(
+        detallesPlaneador.id,
+        {
+          raCursos,
+          tipoEvidencias,
+          instrumentos,
+          unidadesTematicas,
+          materia_id,
+        },
+        t
+      );
       // Respondemos al usuario
       res.status(200).json({ message: "Fila creada exitosamente" });
     });
@@ -333,91 +226,244 @@ const createDetallesPlaneador = async (req, res, next) => {
   }
 };
 
-/* --------- updatePlaneador function -------------- */
-const updatePlaneador = async (req, res, next) => {
-  // Obtenemos el id del planeador a actualizar
+/* --------- updateDetallesPlaneador function -------------- */
+const updateDetallesPlaneador = async (req, res, next) => {
   const { id } = req.params;
-  // Obtenemos los datos a actualizar
-  const { area_formacion, user_id, materia_id } = req.body;
-  try {
-    const [planeador, user_exist, materia_exist] = await Promise.all([
-      Planeador.findByPk(id),
-      Usuario.findByPk(user_id),
-      Materia.findByPk(materia_id),
-    ]);
-    // Verificamos el planeador
-    if (!planeador) {
-      req.log.warn(
-        `El usuario con id ${req.user.id} intento acceder a un planeador no especificado`
-      );
-      return res.status(400).json({
-        error: "No se encuentra ningun planeador con el id especificado",
-      });
-    }
-    // Comprobamos que el id del usuario corresponda a uno válido
-    if (!user_exist) {
-      req.log.warn(
-        `Intento de asociacion de un usuario inexistente a uno nuevo planeador por parte del usuario con id ${req.user.id}`
-      );
-      return res.status(400).json({
-        error:
-          "El id del usuario proporcionado no corresponde con ninguno existente",
-      });
-    }
-    // Comprobamos que el id de la materia corresponda a uno válido
-    if (!materia_exist) {
-      req.log.warn(
-        `Intento de asociacion de una materia inexistente a uno nuevo planeador por parte del usuario con id ${req.user.id}`
-      );
-      return res.status(400).json({
-        error:
-          "El id de la materia proporcionada no corresponde con ninguna existente",
-      });
-    }
-    // Actualizamos el planeador
-    await planeador.update({
-      area_formacion,
-      user_id,
-      materia_id,
-    });
+  const {
+    valor_evaluacion,
+    estrategia_retroalimentacion,
+    semana_retroalimentacion,
+    corte_periodo,
+    semana_actividad_desarrollada,
+    planeador_id,
+    ra_id,
+    materia_id,
+    raCursos,
+    tipoEvidencias,
+    instrumentos,
+    unidadesTematicas,
+  } = req.body;
 
-    // Respondemos al usuario
-    res.status(200).json({
-      message: "Datos generales del planeador actualizados correctamente",
+  try {
+    // Verificar que el DetallesPlaneador existe
+    const detallesPlaneador = await Detalles.findByPk(id);
+    if (!detallesPlaneador) {
+      return res.status(404).json({ error: "DetallesPlaneador no encontrado" });
+    }
+
+    // Verificar que el Planeador y el Resultado de Aprendizaje existen
+    const planeador = await Planeador.findByPk(planeador_id);
+    if (!planeador) {
+      return res.status(404).json({ error: "Planeador no encontrado" });
+    }
+    const resultadoAprendizaje = await ResultadoAprendizaje.findByPk(ra_id);
+    if (!resultadoAprendizaje) {
+      return res
+        .status(404)
+        .json({ error: "Resultado de Aprendizaje no encontrado" });
+    }
+
+    // Iniciar transacción
+    await sequelize.transaction(async (t) => {
+      // Actualizar el DetallesPlaneador
+      await detallesPlaneador.update(
+        {
+          valor_evaluacion,
+          estrategia_retroalimentacion,
+          semana_retroalimentacion,
+          corte_periodo,
+          semana_actividad_desarrollada,
+          planeador_id,
+          ra_id,
+        },
+        { transaction: t }
+      );
+
+      // Eliminar relaciones existentes
+      await detalles_raCurso.destroy({
+        where: { detallesPlaneador_id: id },
+        transaction: t,
+      });
+      await detalles_tipo.destroy({
+        where: { detallesPlaneador_id: id },
+        transaction: t,
+      });
+      await detalles_instrumento.destroy({
+        where: { detallesPlaneador_id: id },
+        transaction: t,
+      });
+      await detalles_unidad.destroy({
+        where: { detallesPlaneador_id: id },
+        transaction: t,
+      });
+      // Gestionar relaciones
+      await manageDetallesRelations(
+        id,
+        {
+          raCursos,
+          tipoEvidencias,
+          instrumentos,
+          unidadesTematicas,
+          materia_id,
+        },
+        t
+      );
+      // Responder al usuario
+      res
+        .status(200)
+        .json({ message: "DetallesPlaneador actualizado exitosamente" });
     });
   } catch (err) {
-    const errorUpdatePlan = new Error(
-      `Ocurrio un problema al actualizar los datos generales del planeador - ${err.message}`
+    next(
+      new Error(
+        `Ocurrió un problema al actualizar el DetallesPlaneador: ${err.message}`
+      )
     );
-    errorUpdatePlan.stack = err.stack;
-    next(errorUpdatePlan);
   }
 };
+
+const manageDetallesRelations = async (
+  detallesPlaneadorId,
+  { raCursos, tipoEvidencias, instrumentos, unidadesTematicas, materia_id },
+  transaction
+) => {
+  for (let i = 0; i < raCursos.length; i++) {
+    const raCursoId = raCursos[i];
+    const raCurso = await RaCurso.findOne({
+      where: {
+        id: raCursoId,
+        materia_id: materia_id,
+      },
+      transaction,
+    });
+    if (raCurso) {
+      // Crear relación en DetallesRaCurso
+      await detalles_raCurso.create(
+        {
+          detallesPlaneador_id: detallesPlaneadorId,
+          raCurso_id: raCursoId,
+        },
+        { transaction }
+      );
+
+      // Transformar las cadenas de texto en arrays
+      const tipoEvidenciasArray = tipoEvidencias[i]
+        .split(",")
+        .map((id) => parseInt(id));
+      for (let j = 0; j < tipoEvidenciasArray.length; j++) {
+        const tipoEvidenciaId = tipoEvidenciasArray[j];
+        const tipoEvidencia = await TipoEvidencia.findOne({
+          where: {
+            id: tipoEvidenciaId,
+            ra_curso_id: raCurso.id,
+          },
+          transaction,
+        });
+        if (tipoEvidencia) {
+          // Crear relación en DetallesTipo
+          await detalles_tipo.create(
+            {
+              detallesPlaneador_id: detallesPlaneadorId,
+              tipo_id: tipoEvidencia.id,
+            },
+            { transaction }
+          );
+
+          // Transformar las cadenas de texto en arrays
+          const instrumentosArray = instrumentos[j]
+            .split(",")
+            .map((id) => parseInt(id));
+          for (let k = 0; k < instrumentosArray.length; k++) {
+            const instrumentoId = instrumentosArray[k];
+            const tipoInstrumento = await TipoInstrumento.findOne({
+              where: {
+                tipo_id: tipoEvidencia.id,
+                instrumento_id: instrumentoId,
+              },
+              transaction,
+            });
+
+            if (!tipoInstrumento) {
+              // Si no existe, crear la relación en la tabla intermedia TipoInstrumento
+              await TipoInstrumento.create(
+                {
+                  tipo_id: tipoEvidencia.id,
+                  instrumento_id: instrumentoId,
+                },
+                { transaction }
+              );
+            }
+
+            // Verificar si ya existe relación entre el detallesPlaneador y el instrumento
+            const tipoDetalles = await DetallesInstrumento.findOne({
+              where: {
+                detallesPlaneador_id: detallesPlaneadorId,
+                instrumento_id: instrumentoId,
+              },
+              transaction,
+            });
+            if (!tipoDetalles) {
+              // Crear relación en DetallesInstrumento
+              await detalles_instrumento.create(
+                {
+                  detallesPlaneador_id: detallesPlaneadorId,
+                  instrumento_id: instrumentoId,
+                },
+                { transaction }
+              );
+            }
+          }
+        }
+      }
+    } else {
+      throw new Error(
+        `RaCurso con id ${raCursoId} no pertenece a la materia con id ${materia_id}`
+      );
+    }
+  }
+
+  // Asociar Unidades Tematicas
+  for (const unidadId of unidadesTematicas) {
+    const unidadTematica = await UnidadTematica.findByPk(unidadId, {
+      transaction,
+    });
+    if (unidadTematica) {
+      // Crear relación en DetallesUnidad
+      await detalles_unidad.create(
+        {
+          detallesPlaneador_id: detallesPlaneadorId,
+          unidad_id: unidadTematica.id,
+        },
+        { transaction }
+      );
+    }
+  }
+};
+
 /* --------- deletePlaneador function -------------- */
 const deletePlaneador = async (req, res, next) => {
-  // Obtenemos el identificador del planeador
+  // Obtenemos el identificador de la fila del planeador
   const { id } = req.params;
 
   try {
-    // Verificamos la existencia del planeador
-    const planeador = await Planeador.findByPk(id, { include: Detalles });
-    if (!planeador) {
-      req.log.warn("Intento de desvinculación de un planeador inexistente");
+    // Verificamos la existencia de la fila del planeador
+    const detallesPlaneador = await Detalles.findByPk(id);
+    if (!detallesPlaneador) {
+      req.log.warn("Intento de eliminacion de una fila inexistente");
       return res
         .status(400)
-        .json({ error: "No se encontró el planeador especificado" });
+        .json({ error: "No se encontró la fila especificada" });
     }
-    // Eliminar todos los detalles planeador(filas) asociados al planeador general
-    await Detalles.destroy({ where: { planeador_id: planeador.id } });
-    // Eliminar la materia misma
-    await planeador.destroy();
+    // Eliminar la fila
+    await detallesPlaneador.destroy();
+
     // Respondemos al usuario
     res.status(200).json({
-      message: "El planeador ha sido eliminado de la plataforma correctamente",
+      message: "La fila del planeador ha sido eliminada de la plataforma correctamente",
     });
   } catch (error) {
     const errorDelPlan = new Error(
-      `Ocurrió un problema al intentar eliminar el planeador - ${error.message}`
+      `Ocurrió un problema al intentar eliminar la fila del planeador - ${error.message}`
     );
     errorDelPlan.stack = error.stack;
     next(errorDelPlan);
@@ -428,5 +474,7 @@ const controller = {
   getDetallesByPlaneador,
   getDetallesById,
   createDetallesPlaneador,
+  updateDetallesPlaneador,
+  deletePlaneador
 };
 export default controller;
