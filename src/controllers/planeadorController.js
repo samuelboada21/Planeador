@@ -7,6 +7,7 @@ import RaCurso from "../models/RaCurso.js";
 import TipoEvidencia from "../models/TipoEvidencia.js";
 import Instrumento from "../models/InstrumentoEvaluacion.js";
 import UnidadTematica from "../models/UnidadTematica.js";
+import Subtema from "../models/Subtema.js";
 import ExcelJS from "exceljs";
 
 /* --------- getPlaneadores function -------------- */
@@ -218,7 +219,7 @@ const fetchPlaneadorById = async (id) => {
       },
       {
         model: Materia,
-        attributes: ["id", "codigo", "nombre"],
+        attributes: ["id", "codigo", "nombre", "tipo", "creditos"],
       },
       {
         model: Detalles,
@@ -254,6 +255,12 @@ const fetchPlaneadorById = async (id) => {
           {
             model: UnidadTematica,
             attributes: ["id", "nombre"],
+            include: [
+              {
+                model: Subtema,
+                attributes: ["id", "nombre"],
+              },
+            ],
           },
         ],
       },
@@ -280,20 +287,50 @@ const createExcelFile = async (req, res, next) => {
     worksheet.getCell("B3").value = "Planeador Docente";
     worksheet.getCell("B3").font = { size: 14, bold: true };
 
-    // Información del profesor
-    worksheet.getCell("B7").value = "Nombre del profesor";
-    worksheet.mergeCells("C7:D7");
-    worksheet.getCell("C7").value = planeador.Usuario.nombre;
-    worksheet.getCell("B8").value = "Área de formación";
-    worksheet.getCell("C8").value = planeador.area_formacion;
-    worksheet.getCell("B9").value = "Código curso";
-    worksheet.getCell("C9").value = planeador.Materia.codigo;
-    worksheet.getCell("B10").value = "Nombre del curso";
-    worksheet.getCell("C10").value = planeador.Materia.nombre;
-    worksheet.getCell("B11").value = "Tipo de curso";
-    worksheet.getCell("C11").value = "Tipo de curso"; // Ajustar según sea necesario
-    worksheet.getCell("B12").value = "Número de créditos";
-    worksheet.getCell("C12").value = "Número de créditos"; // Ajustar según sea necesario
+    // Función auxiliar para asignar valores y hacer merge de celdas
+    const setCellValueAndMerge = (cell, mergeRange, title, value) => {
+      worksheet.getCell(cell).value = title;
+      worksheet.mergeCells(mergeRange);
+      worksheet.getCell(mergeRange.split(":")[0]).value = value;
+    };
+
+    // Asignar valores y hacer merge de celdas usando la función auxiliar
+    setCellValueAndMerge(
+      "B7",
+      "C7:D7",
+      "Nombre del Profesor",
+      planeador.Usuario.nombre
+    );
+    setCellValueAndMerge(
+      "B8",
+      "C8:D8",
+      "Área de Formación",
+      planeador.area_formacion
+    );
+    setCellValueAndMerge(
+      "B9",
+      "C9:D9",
+      "Código del Curso",
+      planeador.Materia.codigo
+    );
+    setCellValueAndMerge(
+      "B10",
+      "C10:D10",
+      "Nombre del Curso",
+      planeador.Materia.nombre
+    );
+    setCellValueAndMerge(
+      "B11",
+      "C11:D11",
+      "Tipo de Curso",
+      planeador.Materia.tipo === 0 ? "Electiva" : "Obligatoria"
+    );
+    setCellValueAndMerge(
+      "B12",
+      "C12:D12",
+      "Número de Créditos",
+      planeador.Materia.creditos
+    );
 
     // Títulos de las columnas
     const headers = [
@@ -318,75 +355,109 @@ const createExcelFile = async (req, res, next) => {
       worksheet.getColumn(index + 2).width = 40; // Ajusta el valor 25 según sea necesario
     });
     headerRow.commit();
-    // worksheet.getRow(15).height = 20;
 
-    // Función para aplicar wrapText a todas las celdas
-    const applyWrapTextToAllCells = (worksheet) => {
-      worksheet.eachRow((row) => {
-        row.eachCell((cell) => {
-          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    let currentRow = 16;
+
+    planeador.Detalles_Planeadores.forEach((detalle) => {
+      const ra = detalle.Resultados_Aprendizaje;
+      const raCursos = detalle.Ra_Cursos;
+      // Formatear las unidades temáticas como una lista
+      const unidadTematicaStr = detalle.Unidades_Tematicas.map(
+        (unidad) => `* ${unidad.nombre}`
+      ).join("\n");
+      let raStartRow = currentRow;
+
+      raCursos.forEach((raCurso) => {
+        let raCursoStartRow = currentRow;
+
+        const tiposEvidencia = raCurso.Tipo_Evidencias;
+        tiposEvidencia.forEach((tipoEvidencia) => {
+          let tipoEvidenciaStartRow = currentRow;
+
+          const instrumentos = tipoEvidencia.Instrumentos;
+          instrumentos.forEach((instrumento, instrumentoIndex) => {
+            // Recorrer las unidades temáticas y los subtemas
+            const subtemasStr = detalle.Unidades_Tematicas.flatMap((unidad) =>
+              unidad.Subtemas.map((subtema) => `- ${subtema.nombre}`)
+            ).join("\n");
+
+            worksheet.addRow([
+              null, // Para dejar la columna A vacía
+              ra.descripcion,
+              raCurso.nombre,
+              tipoEvidencia.nombre,
+              instrumento.nombre,
+              detalle.valor_evaluacion.split(",")[instrumentoIndex], // Valor de evaluación correspondiente al instrumento
+              detalle.estrategia_retroalimentacion,
+              detalle.semana_retroalimentacion,
+              detalle.corte_periodo,
+              detalle.semana_actividad_desarrollada,
+              unidadTematicaStr,
+              subtemasStr,
+            ]);
+
+            currentRow++;
+          });
+
+          // Combinar celdas para Tipo de evidencia de Aprendizaje
+          if (tipoEvidenciaStartRow < currentRow - 1) {
+            worksheet.mergeCells(
+              `D${tipoEvidenciaStartRow}:D${currentRow - 1}`
+            );
+          }
         });
+
+        // Combinar celdas para Resultado de Aprendizaje Curso y estrategia_retroalimentacion
+        if (raCursoStartRow < currentRow - 1) {
+          worksheet.mergeCells(`C${raCursoStartRow}:C${currentRow - 1}`);
+          worksheet.mergeCells(`G${raCursoStartRow}:G${currentRow - 1}`);
+        }
       });
-    };
 
-    // const data = [];
+      // Combinar celdas para Resultado de Aprendizaje, semana_retroalimentación, corte de evaluación y semana_actividad_desarrollada, unidades temáticas
+      if (raStartRow < currentRow - 1) {
+        worksheet.mergeCells(`B${raStartRow}:B${currentRow - 1}`);
+        worksheet.mergeCells(`H${raStartRow}:H${currentRow - 1}`);
+        worksheet.mergeCells(`I${raStartRow}:I${currentRow - 1}`);
+        worksheet.mergeCells(`J${raStartRow}:J${currentRow - 1}`);
+        worksheet.mergeCells(`K${raStartRow}:K${currentRow - 1}`);
+        worksheet.mergeCells(`L${raStartRow}:L${currentRow - 1}`);
+      }
+    });
 
-    // planeador.Detalles_Planeadores.forEach((detalle) => {
-    //   const ra = detalle.Resultados_Aprendizaje;
-    //   const raCursos = detalle.Ra_Cursos;
-    //   const unidadTematica = detalle.Unidades_Tematicas;
+    // Aplicar wrapText a todas las celdas
+    worksheet.eachRow((row) => {
+      row.eachCell((cell) => {
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+          wrapText: true,
+        };
+      });
+    });
 
-    //   raCursos.forEach((raCurso) => {
-    //     const tiposEvidencia = raCurso.Tipo_Evidencias;
+    // Aplicar wrapText a todas las celdas
+    worksheet.eachRow((row) => {
+      row.eachCell((cell) => {
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+          wrapText: true,
+        };
+      });
+    });
 
-    //     tiposEvidencia.forEach((tipoEvidencia) => {
-    //       const instrumentos = tipoEvidencia.Instrumentos;
+    // Aplicar wrapText a todas las celdas
+    worksheet.eachRow((row) => {
+      row.eachCell((cell) => {
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+          wrapText: true,
+        };
+      });
+    });
 
-    //       instrumentos.forEach((instrumento) => {
-    //         data.push([
-    //           ra.descripcion,
-    //           raCurso.nombre,
-    //           tipoEvidencia.nombre,
-    //           instrumento.nombre,
-    //           detalle.valor_evaluacion,
-    //           detalle.estrategia_retroalimentacion,
-    //           detalle.semana_retroalimentacion,
-    //           detalle.corte_periodo,
-    //           detalle.semana_actividad_desarrollada,
-    //           unidadTematica.nombre,
-    //           "", // Aquí deberías añadir los subtemas si los tienes
-    //         ]);
-    //       });
-    //     });
-    //   });
-    // });
-
-    // let currentRow = 16;
-    // data.forEach((row) => {
-    //   worksheet.addRow(row);
-    // });
-
-    // // Combinando celdas
-    // let startRow = 16;
-    // data.forEach((row, index) => {
-    //   const nextRow = data[index + 1];
-
-    //   if (nextRow && row[0] === nextRow[0]) {
-    //     worksheet.mergeCells(`B${startRow}:B${startRow + 1}`);
-    //   }
-
-    //   if (nextRow && row[1] === nextRow[1]) {
-    //     worksheet.mergeCells(`C${startRow}:C${startRow + 1}`);
-    //   }
-
-    //   if (nextRow && row[2] === nextRow[2]) {
-    //     worksheet.mergeCells(`D${startRow}:D${startRow + 1}`);
-    //   }
-
-    //   startRow++;
-    // });
-
-    applyWrapTextToAllCells(worksheet);
     const filePath = "PlaneadorDocente.xlsx";
     await workbook.xlsx.writeFile(filePath);
 
