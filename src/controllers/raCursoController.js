@@ -67,7 +67,7 @@ const getRaCursoById = async (req, res, next) => {
 };
 
 /* --------- createRaCurso function -------------- */
-const createRaCurso = async (req, res) => {
+const createRaCurso = async (req, res, next) => {
   // Obtenemos los datos del ra curso a crear
   const { nombre, materia_id } = req.body;
   try {

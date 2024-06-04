@@ -8,9 +8,9 @@ export const categorySchema = z
       .object({
         nombre: z
           .string({
+            required_error: "El nombre de la categoria es requerido",
             invalid_type_error:
               "El nombre de la categoria solo puede ser texto",
-            required_error: "El nombre de la categoria es requerido",
           })
           .min(2, { message: "El nombre de la categoria es muy corto" })
           .max(70, {

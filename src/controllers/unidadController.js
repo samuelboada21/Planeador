@@ -97,7 +97,7 @@ const getUnidadById = async (req, res, next) => {
 };
 
 /* --------- createUnidad function -------------- */
-const createUnidad = async (req, res) => {
+const createUnidad = async (req, res, next) => {
   // Obtenemos los datos de la unidad a crear
   const { nombre, descripcion, materia_id } = req.body;
   try {

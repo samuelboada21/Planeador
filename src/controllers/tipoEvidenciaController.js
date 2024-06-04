@@ -96,7 +96,7 @@ const getTipoEvidenciaById = async (req, res, next) => {
 };
 
 /* --------- createTipoEvidencia function -------------- */
-const createTipoEvidencia = async (req, res) => {
+const createTipoEvidencia = async (req, res, next) => {
   // Obtenemos los datos del tipo de evidencia a crear
   const { nombre, ra_curso_id } = req.body;
   try {

@@ -61,10 +61,14 @@ const getCategoriaById = async (req, res, next) => {
 };
 
 /* --------- createCategoria function -------------- */
-const createCategoria = async (req, res) => {
+const createCategoria = async (req, res, next) => {
   // Obtenemos los datos de la categoria a crear
-  const { nombre, descripcion } = req.body;
+  
   try {
+    const { nombre, descripcion } = req.body;
+    if(!nombre) {
+      res.status(400).json({ error: "El nombre es requerido"});
+    }
     // Comprobamos que el nombre sea unico
     const catFound = await Categoria.findOne({
       where: {

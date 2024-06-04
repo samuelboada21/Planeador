@@ -266,7 +266,7 @@ const getDirectors = async (req, res, next) => {
 
 /* --------- getDirectorById function -------------- */
 
-const getDirectorById = async (req, res) => {
+const getDirectorById = async (req, res, next) => {
   //Obtenemos el id del director
   const { id } = req.params;
 

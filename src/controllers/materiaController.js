@@ -88,7 +88,7 @@ const getMateriaById = async (req, res, next) => {
 };
 
 /* --------- createMateria function -------------- */
-const createMateria = async (req, res) => {
+const createMateria = async (req, res, next) => {
   // Obtenemos los datos de la materia a crear
   const { codigo, nombre, tipo, creditos, semestre, competencias } = req.body;
   let result;

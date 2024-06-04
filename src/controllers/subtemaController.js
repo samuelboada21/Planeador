@@ -94,7 +94,7 @@ const getSubtemaById = async (req, res, next) => {
 };
 
 /* --------- createSubtema function -------------- */
-const createSubtema = async (req, res) => {
+const createSubtema = async (req, res, next) => {
   // Obtenemos los datos del subtema a crear
   const { nombre, descripcion, unidad_tematica_id } = req.body;
   try {
