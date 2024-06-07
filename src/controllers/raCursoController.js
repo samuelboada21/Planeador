@@ -121,6 +121,12 @@ const updateRaCurso = async (req, res, next) => {
   // Obtenemos los datos a actualizar
   const { nombre, estado, materia_id } = req.body;
   try {
+    const materia = await Materia.findByPk(materia_id);
+    if (!materia) {
+      return res
+        .status(404)
+        .json({ error: "La materia especificada no existe" });
+    }
     // Hacemos las verificaciones del ra curso en paralelo
     const [raCurso, raCursoFound] = await Promise.all([
       RaCurso.findByPk(id),

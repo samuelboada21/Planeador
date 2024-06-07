@@ -48,7 +48,7 @@ const getUnidadesByMateria = async (req, res, next) => {
       where: { materia_id: id }, // Filtramos por el ID de la materia
       include: {
         model: Materia,
-        attributes: ["codigo","nombre"],
+        attributes: ["codigo", "nombre"],
       },
     });
     // Respondemos al usuario
@@ -149,7 +149,7 @@ const updateUnidad = async (req, res, next) => {
   const { nombre, descripcion, materia_id } = req.body;
   try {
     // Hacemos las verificaciones de la unidad en paralelo
-    const [unidad, uniFound] = await Promise.all([
+    const [unidad, uniFound, materiaExist] = await Promise.all([
       UnidadTematica.findByPk(id),
       UnidadTematica.findOne({
         where: {
@@ -157,6 +157,7 @@ const updateUnidad = async (req, res, next) => {
           materia_id: materia_id,
         },
       }),
+      Materia.findByPk(materia_id),
     ]);
     // verificamos la unidad
     if (!unidad) {
@@ -174,6 +175,11 @@ const updateUnidad = async (req, res, next) => {
       );
       return res.status(400).json({
         error: `El nombre de la unidad tematica ${nombre} ya se encuentra registrado en la materia`,
+      });
+    }
+    if (!materiaExist) {
+      return res.status(400).json({
+        error: "No se encontró ninguna materia con el id especificado",
       });
     }
     // Actualizamos la unidad

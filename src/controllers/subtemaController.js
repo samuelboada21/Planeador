@@ -144,6 +144,13 @@ const updateSubtema = async (req, res, next) => {
   // Obtenemos los datos a actualizar
   const { nombre, descripcion, unidad_tematica_id } = req.body;
   try {
+    // Buscar la unidad para la que se quiere actualizar el subtmea
+    const unidad = await UnidadTematica.findByPk(unidad_tematica_id);
+    if (!unidad) {
+      return res
+        .status(404)
+        .json({ error: "La unidad temática especificada no existe" });
+    }
     // Hacemos las verificaciones del subtema en paralelo
     const [subtema, subFound] = await Promise.all([
       Subtema.findByPk(id),
