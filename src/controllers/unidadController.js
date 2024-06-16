@@ -46,10 +46,16 @@ const getUnidadesByMateria = async (req, res, next) => {
     const unidades = await UnidadTematica.findAll({
       attributes: ["id", "nombre", "descripcion"],
       where: { materia_id: id }, // Filtramos por el ID de la materia
-      include: {
-        model: Materia,
-        attributes: ["codigo", "nombre"],
-      },
+      include: [
+        {
+          model: Materia,
+          attributes: ["codigo", "nombre"],
+        },
+        {
+          model: Subtema,
+          attributes: ["id", "nombre"],
+        },
+      ],
     });
     // Respondemos al usuario
     res.status(200).json(unidades);

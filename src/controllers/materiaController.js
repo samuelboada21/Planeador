@@ -2,10 +2,15 @@ import UnidadTematica from "../models/UnidadTematica.js";
 import Subtema from "../models/Subtema.js";
 import Competencia from "../models/Competencia.js";
 import Materia from "../models/Materia.js";
+import ResultadoAprendizaje from "../models/ResultadoAprendizaje.js";
+import RaCurso from "../models/RaCurso.js";
 import XLSX from "xlsx";
 import { tieneDuplicadosMateria } from "../util/duplicatedData.js";
 import sequelize from "../database/db.js";
-import { asignCompetences, asignCompetencesUpdate } from "../util/createdJoins.js";
+import {
+  asignCompetences,
+  asignCompetencesUpdate,
+} from "../util/createdJoins.js";
 
 /* --------- getMaterias function -------------- */
 const getMaterias = async (req, res, next) => {
@@ -61,10 +66,26 @@ const getMateriaById = async (req, res, next) => {
         {
           model: Competencia,
           attributes: ["nombre"],
+          include: [
+            {
+              model: ResultadoAprendizaje,
+              attributes: ["id", "descripcion"],
+            },
+          ],
+        },
+        {
+          model: RaCurso,
+          attributes: ["id", "nombre"],
         },
         {
           model: UnidadTematica,
           attributes: ["nombre"],
+          include: [
+            {
+              model: Subtema,
+              attributes: ["id", "nombre"],
+            },
+          ],
         },
       ],
     });
@@ -449,7 +470,7 @@ const controller = {
   getMateriaById,
   createMateria,
   updateMateria,
-  unlinkUnidades,//no se va a usar en el front
+  unlinkUnidades, //no se va a usar en el front
   createMaterias,
   deleteMateria,
 };
