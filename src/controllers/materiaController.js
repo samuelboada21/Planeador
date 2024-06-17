@@ -49,10 +49,10 @@ const getMaterias = async (req, res, next) => {
 
 /* --------- getMateriaById function -------------- */
 const getMateriaById = async (req, res, next) => {
-  // Obtenemos el id de la materia a obtener
   const { id } = req.params;
+
   try {
-    // Obtenemos y verificamos la materia
+    // Verificamos la existencia de la materia
     const materia = await Materia.findByPk(id, {
       attributes: [
         "codigo",
@@ -65,13 +65,8 @@ const getMateriaById = async (req, res, next) => {
       include: [
         {
           model: Competencia,
-          attributes: ["nombre"],
-          include: [
-            {
-              model: ResultadoAprendizaje,
-              attributes: ["id", "descripcion"],
-            },
-          ],
+          attributes: ["id", "nombre"],
+          // through: { attributes: [] }, // Asumiendo una tabla intermedia
         },
         {
           model: RaCurso,
@@ -89,6 +84,7 @@ const getMateriaById = async (req, res, next) => {
         },
       ],
     });
+
     if (!materia) {
       req.log.warn(
         `El usuario con id ${req.user.id} intento acceder a una materia no especificada`
@@ -97,11 +93,29 @@ const getMateriaById = async (req, res, next) => {
         error: "No se encuentra ninguna materia con el id especificado",
       });
     }
-    // Respondemos al usuario
-    res.status(200).json(materia);
+
+    // Obtener los IDs de las competencias relacionadas a la materia
+    const competenciaIds = materia.Competencias.map(competencia => competencia.id);
+
+    // Consultar los resultados de aprendizaje asociados a las competencias de la materia
+    const resultadosAprendizaje = await ResultadoAprendizaje.findAll({
+      where: {
+        competencia_id: competenciaIds,
+      },
+      attributes: ["id", "descripcion"],
+    });
+
+    // Construir la respuesta incluyendo los resultados de aprendizaje
+    const response = {
+      ...materia.get({ plain: true }),
+      resultadosAprendizaje,
+    };
+
+    // Responder al usuario
+    res.status(200).json(response);
   } catch (err) {
     const errorGetMatId = new Error(
-      `Ocurrio un problema al obtener los datos de la materia especificada - ${err.message}`
+      `Ocurrió un problema al obtener los datos de la materia especificada - ${err.message}`
     );
     errorGetMatId.stack = err.stack;
     next(errorGetMatId);
