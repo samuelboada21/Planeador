@@ -74,7 +74,7 @@ const getMateriaById = async (req, res, next) => {
         },
         {
           model: UnidadTematica,
-          attributes: ["nombre"],
+          attributes: ["id","nombre"],
           include: [
             {
               model: Subtema,
